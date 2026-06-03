@@ -1,0 +1,62 @@
+---
+import { fetchDecoratorHtml } from '@navikt/nav-dekoratoren-moduler/ssr';
+import '@navikt/ds-css';
+import { PageLayout } from '../components/PageLayout';
+import { MswProvider } from '../components/MswProvider';
+
+const mswEnabled = import.meta.env.PUBLIC_MSW_ENABLED === 'true';
+
+interface Props {
+  title: string;
+  language?: 'nb' | 'nn' | 'en';
+}
+
+const { title, language = 'nb' } = Astro.props;
+
+const decoratorEnv = (process.env.DECORATOR_ENV as 'dev' | 'prod') || 'dev';
+
+const decoratorFragments = await Promise.race([
+  fetchDecoratorHtml({
+    env: decoratorEnv,
+    params: {
+      context: 'privatperson',
+      language,
+    },
+  }),
+  new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('Decorator fetch timeout')), 3000)
+  ),
+]).catch(() => ({
+  DECORATOR_HEAD_ASSETS: '',
+  DECORATOR_HEADER: '',
+  DECORATOR_FOOTER: '',
+  DECORATOR_SCRIPTS: '',
+}));
+
+const {
+  DECORATOR_HEAD_ASSETS,
+  DECORATOR_HEADER,
+  DECORATOR_FOOTER,
+  DECORATOR_SCRIPTS,
+} = decoratorFragments;
+---
+
+<html lang={language}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Fagprøve monorepo-mal med Astro, React og Nav Aksel designsystem." />
+    <title>{title}</title>
+    <Fragment set:html={DECORATOR_HEAD_ASSETS} />
+  </head>
+  <body>
+    <PageLayout
+      decoratorHeader={DECORATOR_HEADER}
+      decoratorFooter={DECORATOR_FOOTER}
+    >
+      <slot />
+    </PageLayout>
+    <Fragment set:html={DECORATOR_SCRIPTS} />
+    {mswEnabled && <MswProvider client:only="react" />}
+  </body>
+</html>

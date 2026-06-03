@@ -1,0 +1,20 @@
+# Gradle build cache and wrapper (not needed — jar is pre-built)
+.gradle/
+
+# Source code (not needed — jar is pre-built)
+src/
+
+# Build output except the fat jar
+build/
+!build/libs/
+!build/libs/*-all.jar
+
+# IDE config
+.idea/
+*.iml
+
+# Git
+.git/
+
+# Docs
+*.md

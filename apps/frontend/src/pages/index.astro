@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { WelcomeCard } from '../components/WelcomeCard';
+import { HelloMessage } from '../components/HelloMessage';
+import { ErrorBoundary } from '../components/ErrorBoundary';
+import { CityForm } from '../components/CityForm';
+import { UserForm } from '../components/UserForm';
+import { VStack } from '@navikt/ds-react';
+---
+
+<BaseLayout title="Hjem">
+  <VStack gap="space-8">
+    <WelcomeCard
+      client:load
+      heading="Velkommen"
+      body="Dette er en Astro-app med Nav-dekoratøren og Aksel designsystem."
+    />
+    <ErrorBoundary client:only="react">
+      <HelloMessage client:only="react" />
+    </ErrorBoundary>
+    <CityForm client:load />
+    <UserForm client:load />
+  </VStack>
+</BaseLayout>

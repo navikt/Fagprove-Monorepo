@@ -1,0 +1,56 @@
+apiVersion: nais.io/v1alpha1
+kind: Application
+metadata:
+  name: fagprove-monorepo-backend-staging
+  namespace: laerlinger
+  labels:
+    team: laerlinger
+spec:
+  image: {{image}}
+  port: 8080
+  liveness:
+    path: /internal/isalive
+    initialDelay: 30
+  readiness:
+    path: /internal/isready
+    initialDelay: 30
+  replicas:
+    min: 1
+    max: 1
+  env:
+    - name: TZ
+      value: Europe/Oslo
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  envFrom:
+    - secret: google-sql-fagprove-monorepo-backend-staging
+  prometheus:
+    enabled: true
+    path: /internal/metrics
+  observability:
+    autoInstrumentation:
+      enabled: true
+      runtime: java
+  gcp:
+    sqlInstances:
+      - type: POSTGRES_16
+        tier: db-custom-1-3840
+        diskSize: 10
+        diskType: SSD
+        diskAutoresize: true
+        diskAutoresizeLimit: 100
+        highAvailability: false
+        cascadingDelete: false
+        autoBackupHour: 1
+        collation: nb_NO.UTF8
+        databases:
+          - name: fagprove-monorepo-backend-staging
+            envVarPrefix: DB
+  accessPolicy:
+    inbound:
+      rules:
+        - application: fagprove-monorepo-frontend-staging

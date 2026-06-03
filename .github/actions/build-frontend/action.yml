@@ -1,0 +1,30 @@
+name: Build frontend
+description: Builds and pushes the frontend Docker image to GAR. Requires a prior actions/checkout step.
+
+inputs:
+  reader-token:
+    description: GitHub token for npm.pkg.github.com (@navikt packages)
+    required: true
+
+outputs:
+  image:
+    description: Docker image reference
+    value: ${{ steps.docker-build-push.outputs.image }}
+  telemetry:
+    description: NAIS build telemetry
+    value: ${{ steps.docker-build-push.outputs.telemetry }}
+
+runs:
+  using: composite
+  steps:
+    - uses: nais/docker-build-push@751a312f0803eb96a05a41fadf51be19b7be362c # v0
+      id: docker-build-push
+      with:
+        team: laerlinger
+        dockerfile: apps/frontend/Dockerfile
+        docker_context: apps/frontend
+        image_suffix: frontend
+        build_secrets: NODE_AUTH_TOKEN=${{ inputs.reader-token }}
+        cache_from: ""
+        cache_to: ""
+        salsa: false

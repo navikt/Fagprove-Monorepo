@@ -1,0 +1,31 @@
+name: Deploy to NAIS
+description: Checks out the repo and deploys a pre-built image to a NAIS cluster.
+
+inputs:
+  cluster:
+    description: Target cluster (dev-gcp or prod-gcp)
+    required: true
+  resource:
+    description: Path to the nais.yaml manifest
+    required: true
+  image:
+    description: Docker image reference (from nais/docker-build-push)
+    required: true
+  telemetry:
+    description: NAIS build telemetry (from nais/docker-build-push)
+    required: false
+    default: ''
+  vars:
+    description: Extra VAR entries appended after image= (comma-separated key=value)
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - uses: nais/deploy/actions/deploy@d57354b433c8d6847ab092467d9fe976a3d008aa # v2
+      env:
+        CLUSTER: ${{ inputs.cluster }}
+        RESOURCE: ${{ inputs.resource }}
+        VAR: image=${{ inputs.image }}${{ inputs.vars != '' && format(',{0}', inputs.vars) || '' }}
+        TELEMETRY: ${{ inputs.telemetry }}

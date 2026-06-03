@@ -1,0 +1,199 @@
+name: Build and deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      deploy_to_prod:
+        description: 'Deploy to production'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  test-frontend:
+    name: Frontend tests
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: apps/frontend
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+        with:
+          version: 11
+          run_install: false
+
+      - name: Get pnpm store path
+        id: pnpm-cache
+        run: echo "store=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          path: ${{ steps.pnpm-cache.outputs.store }}
+          key: pnpm-${{ hashFiles('apps/frontend/pnpm-lock.yaml') }}
+          restore-keys: pnpm-
+
+      - name: Install dependencies
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=$NODE_AUTH_TOKEN" >> .npmrc
+          pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
+
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm test
+
+  test-backend:
+    name: Backend tests
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - run: ./gradlew ktlintCheck --no-daemon
+      - run: ./gradlew test --no-daemon
+
+  build-frontend:
+    name: Build frontend
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+      telemetry: ${{ steps.build.outputs.telemetry }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/build-frontend
+        id: build
+        with:
+          reader-token: ${{ secrets.READER_TOKEN }}
+
+  build-backend:
+    name: Build backend
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+      telemetry: ${{ steps.build.outputs.telemetry }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/build-backend
+        id: build
+
+  deploy-frontend-staging:
+    name: Deploy frontend to staging
+    timeout-minutes: 10
+    needs: [build-frontend, test-frontend]
+    if: inputs.deploy_to_prod != true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/deploy-to-nais
+        with:
+          cluster: dev-gcp
+          resource: apps/frontend/.nais/nais-staging.yaml
+          image: ${{ needs.build-frontend.outputs.image }}
+          telemetry: ${{ needs.build-frontend.outputs.telemetry }}
+
+  deploy-backend-staging:
+    name: Deploy backend to staging
+    timeout-minutes: 10
+    needs: [build-backend, test-backend]
+    if: inputs.deploy_to_prod != true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/deploy-to-nais
+        with:
+          cluster: dev-gcp
+          resource: apps/backend/.nais/nais-staging.yaml
+          image: ${{ needs.build-backend.outputs.image }}
+          telemetry: ${{ needs.build-backend.outputs.telemetry }}
+
+  deploy-frontend-prod:
+    name: Deploy frontend to prod
+    timeout-minutes: 10
+    needs: [build-frontend, test-frontend]
+    if: inputs.deploy_to_prod == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/deploy-to-nais
+        with:
+          cluster: prod-gcp
+          resource: apps/frontend/.nais/nais-prod.yaml
+          image: ${{ needs.build-frontend.outputs.image }}
+          telemetry: ${{ needs.build-frontend.outputs.telemetry }}
+
+  deploy-backend-prod:
+    name: Deploy backend to prod
+    timeout-minutes: 10
+    needs: [build-backend, test-backend]
+    if: inputs.deploy_to_prod == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/deploy-to-nais
+        with:
+          cluster: prod-gcp
+          resource: apps/backend/.nais/nais-prod.yaml
+          image: ${{ needs.build-backend.outputs.image }}
+          telemetry: ${{ needs.build-backend.outputs.telemetry }}

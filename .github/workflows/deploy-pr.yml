@@ -1,0 +1,221 @@
+name: PR preview environment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test-frontend:
+    name: Frontend tests
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest-8-cores
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: apps/frontend
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+        with:
+          version: 11
+          run_install: false
+
+      - name: Get pnpm store path
+        id: pnpm-cache
+        run: echo "store=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          path: ${{ steps.pnpm-cache.outputs.store }}
+          key: pnpm-${{ hashFiles('apps/frontend/pnpm-lock.yaml') }}
+          restore-keys: pnpm-
+
+      - name: Install dependencies
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=$NODE_AUTH_TOKEN" >> .npmrc
+          pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.READER_TOKEN }}
+
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm test
+
+  test-backend:
+    name: Backend tests
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest-8-cores
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - run: ./gradlew ktlintCheck test --no-daemon
+
+  build-frontend:
+    name: Build frontend
+    runs-on: ubuntu-latest-8-cores
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+      telemetry: ${{ steps.build.outputs.telemetry }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/build-frontend
+        id: build
+        with:
+          reader-token: ${{ secrets.READER_TOKEN }}
+
+  build-backend:
+    name: Build backend
+    runs-on: ubuntu-latest-8-cores
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+      telemetry: ${{ steps.build.outputs.telemetry }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/build-backend
+        id: build
+
+  deploy-frontend:
+    name: Deploy frontend to PR env
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/deploy-to-nais
+        with:
+          cluster: dev-gcp
+          resource: apps/frontend/.nais/nais-pr.yaml
+          image: ${{ needs.build-frontend.outputs.image }}
+          telemetry: ${{ needs.build-frontend.outputs.telemetry }}
+          vars: pr_number=${{ github.event.pull_request.number }},ttl=${{ github.event.action == 'closed' && '1m' || '8h' }}
+
+  deploy-backend:
+    name: Deploy backend to PR env
+    needs: build-backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/deploy-to-nais
+        with:
+          cluster: dev-gcp
+          resource: apps/backend/.nais/nais-pr.yaml
+          image: ${{ needs.build-backend.outputs.image }}
+          telemetry: ${{ needs.build-backend.outputs.telemetry }}
+          vars: pr_number=${{ github.event.pull_request.number }},ttl=${{ github.event.action == 'closed' && '1m' || '8h' }}
+
+  notify:
+    name: Update preview comment
+    needs: [deploy-frontend, deploy-backend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            const pr = context.payload.pull_request.number;
+            const sha = context.payload.pull_request.head.sha.slice(0, 7);
+            const closed = context.payload.action === 'closed';
+            const body = closed
+              ? [
+                  '## 🚀 Preview environment',
+                  '',
+                  `PR closed from \`${sha}\``,
+                  '',
+                  '| App | Status |',
+                  '|-----|--------|',
+                  '| Frontend | Shutdown requested; Nais TTL set to `1m` |',
+                  '| Backend | Internal service; shutdown requested with Nais TTL set to `1m` |',
+                  '',
+                  '_Preview apps are redeployed with `ttl=1m` on PR close/merge so Nais removes them automatically._',
+                ].join('\n')
+              : [
+                  '## 🚀 Preview environment',
+                  '',
+                  `Deployed from \`${sha}\``,
+                  '',
+                  '| App | URL / status |',
+                  '|-----|--------------|',
+                  `| Frontend | https://fagprove-monorepo-frontend-pr-${pr}.ekstern.dev.nav.no |`,
+                  '| Backend | Internal Nais service only |',
+                  '',
+                  '_Backend uses H2 in-memory — data resets on redeploy. Preview apps use `ttl=8h`._',
+                ].join('\n');
+
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr,
+            });
+            const existing = comments.data.find(c =>
+              c.user.type === 'Bot' && c.body.startsWith('## 🚀 Preview environment')
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr,
+                body,
+              });
+            }

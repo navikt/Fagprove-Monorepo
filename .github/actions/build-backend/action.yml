@@ -1,0 +1,34 @@
+name: Build backend
+description: Builds the Ktor fat jar and pushes the backend Docker image to GAR. Requires a prior actions/checkout step.
+
+outputs:
+  image:
+    description: Docker image reference
+    value: ${{ steps.docker-build-push.outputs.image }}
+  telemetry:
+    description: NAIS build telemetry
+    value: ${{ steps.docker-build-push.outputs.telemetry }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+      with:
+        distribution: temurin
+        java-version: 21
+        cache: gradle
+
+    - name: Build fat jar
+      shell: bash
+      run: cd apps/backend && ./gradlew buildFatJar --no-daemon
+
+    - uses: nais/docker-build-push@751a312f0803eb96a05a41fadf51be19b7be362c # v0
+      id: docker-build-push
+      with:
+        team: laerlinger
+        dockerfile: apps/backend/Dockerfile
+        docker_context: apps/backend
+        image_suffix: backend
+        cache_from: ""
+        cache_to: ""
+        salsa: false

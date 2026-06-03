@@ -1,0 +1,45 @@
+apiVersion: nais.io/v1alpha1
+kind: Application
+metadata:
+  name: fagprove-monorepo-frontend-pr-{{ pr_number }}
+  namespace: laerlinger
+  labels:
+    team: laerlinger
+spec:
+  ttl: {{ttl}}
+  image: {{image}}
+  port: 4321
+  ingresses:
+    - https://fagprove-monorepo-frontend-pr-{{ pr_number }}.ekstern.dev.nav.no
+  liveness:
+    path: /api/health
+    initialDelay: 30
+    timeout: 5
+    failureThreshold: 3
+  readiness:
+    path: /api/health
+    initialDelay: 30
+    timeout: 5
+    failureThreshold: 3
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  replicas:
+    min: 1
+    max: 1
+  env:
+    - name: TZ
+      value: Europe/Oslo
+    - name: DECORATOR_ENV
+      value: dev
+    - name: BACKEND_URL
+      value: http://fagprove-monorepo-backend-pr-{{ pr_number }}
+  accessPolicy:
+    outbound:
+      rules:
+        - application: fagprove-monorepo-backend-pr-{{ pr_number }}
+      external:
+        - host: dekoratoren.ekstern.dev.nav.no

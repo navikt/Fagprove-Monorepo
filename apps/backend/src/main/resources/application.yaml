@@ -1,0 +1,9 @@
+ktor:
+    application:
+        modules:
+            - no.nav.fagprove.ApplicationKt.module
+    deployment:
+        port: 8080
+# Database config is read from environment variables:
+# POSTGRES_URL, POSTGRES_USER, POSTGRES_PASSWORD
+# Set USE_TESTCONTAINERS=true for local development
