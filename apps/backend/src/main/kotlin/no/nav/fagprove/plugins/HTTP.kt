@@ -12,7 +12,10 @@ fun Application.configureHTTP(env: Map<String, String> = System.getenv()) {
     routing {
         swaggerUI(path = "openapi", swaggerFile = "openapi/documentation.yaml")
         get("/openapi.json") {
-            val spec = this::class.java.classLoader.getResource("openapi/documentation.yaml")?.readText()
+            val spec =
+                this::class.java.classLoader
+                    .getResource("openapi/documentation.yaml")
+                    ?.readText()
             if (spec != null) {
                 call.respondText(spec, ContentType("application", "yaml"))
             } else {
