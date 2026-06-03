@@ -24,6 +24,7 @@ dependencies {
     implementation(libs.postgresql)
     implementation(libs.h2)
     implementation(libs.exposed.core)
+    implementation(libs.exposed.java.time)
     implementation(libs.exposed.jdbc)
     implementation(libs.flyway.core)
     implementation(libs.flyway.database.postgresql)
