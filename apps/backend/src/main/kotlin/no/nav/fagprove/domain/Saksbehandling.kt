@@ -5,6 +5,11 @@ data class Saksbehandlingsresultat(
     val regelspor: List<Regelresultat>,
 )
 
+enum class ManuellBeslutning {
+    INNVILGELSE,
+    AVSLAG,
+}
+
 object Saksbehandling {
     fun behandle(soknad: Soknad): Saksbehandlingsresultat {
         val regelspor = mutableListOf<Regelresultat>()
@@ -50,4 +55,26 @@ object Saksbehandling {
             regelspor = regelspor,
         )
     }
+
+    fun besluttManuelt(
+        soknad: Soknad,
+        beslutning: ManuellBeslutning,
+        begrunnelse: String,
+    ): Vedtak =
+        when (beslutning) {
+            ManuellBeslutning.AVSLAG ->
+                Vedtak.Avslag(begrunnelse = begrunnelse)
+
+            ManuellBeslutning.INNVILGELSE -> {
+                val stonadsperiode = StonadsperiodeOppslag.finn(soknad).stonadsperiode
+                val kvoter = KvoteFordeler.fordel(soknad, stonadsperiode).kvoter
+
+                Vedtak.Innvilget(
+                    belop = BeregningsgrunnlagBeregner.avgrensTilMaksYtelse(soknad.oppgittAarsinntekt),
+                    stonadsperiode = stonadsperiode,
+                    kvoter = kvoter,
+                    begrunnelse = begrunnelse,
+                )
+            }
+        }
 }

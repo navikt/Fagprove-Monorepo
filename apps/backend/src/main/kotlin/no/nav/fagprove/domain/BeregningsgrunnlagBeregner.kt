@@ -12,6 +12,8 @@ object BeregningsgrunnlagBeregner {
     private const val SEKS_G = 780_960
     private const val BEREGNINGSPERIODE_MANEDER = 3
 
+    fun avgrensTilMaksYtelse(aarsinntekt: Penger): Penger = Penger(minOf(aarsinntekt.kroner, SEKS_G))
+
     fun beregn(soknad: Soknad): BeregningsgrunnlagResultat {
         val beregningsmaneder = soknad.sisteHeleManeder(BEREGNINGSPERIODE_MANEDER)
         val inntektPerManed =
@@ -39,7 +41,7 @@ object BeregningsgrunnlagBeregner {
             )
         }
 
-        val endeligBelop = minOf(beregnetAarsinntekt, SEKS_G)
+        val endeligBelop = avgrensTilMaksYtelse(Penger(beregnetAarsinntekt)).kroner
         return BeregningsgrunnlagResultat(
             grunnlag =
                 Grunnlag.OK(
