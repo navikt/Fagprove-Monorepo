@@ -6,6 +6,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -16,6 +17,7 @@ import io.ktor.server.testing.testApplication
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import no.nav.fagprove.dto.BehandlingResultatResponse
+import no.nav.fagprove.dto.ErrorResponse
 import no.nav.fagprove.dto.ManuellBeslutningRequest
 import no.nav.fagprove.dto.ManuellBeslutningTypeDto
 import no.nav.fagprove.dto.SakResponse
@@ -93,6 +95,43 @@ class ForeldrepengerRoutesTest {
         }
 
     @Test
+    fun `avviser ugyldig soknad id med strukturert feil`() =
+        testApp { client ->
+            val response =
+                client.post("/api/foreldrepenger/vedtak") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"soknadId":"ikke-en-uuid"}""")
+                }
+
+            assertEquals(HttpStatusCode.BadRequest, response.status)
+            val error = response.errorBody()
+            assertEquals("Bad Request", error.title)
+            assertEquals(400, error.status)
+            assertEquals("soknadId", error.errors.single().field)
+            assertEquals("soknadId må være en gyldig UUID", error.errors.single().message)
+        }
+
+    @Test
+    fun `avviser ugyldig request body med trygg strukturert feil`() =
+        testApp { client ->
+            val response =
+                client.post("/api/foreldrepenger/vedtak") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{}""")
+                }
+
+            assertEquals(HttpStatusCode.BadRequest, response.status)
+            val responseText = response.bodyAsText()
+            val error = serializer.decodeFromString<ErrorResponse>(responseText)
+            assertEquals("Bad Request", error.title)
+            assertEquals(400, error.status)
+            assertEquals("Forespørselen har ugyldig JSON eller mangler påkrevde felter", error.detail)
+            assertFalse(responseText.contains("MissingFieldException"))
+            assertFalse(responseText.contains("StartBehandlingRequest"))
+            assertFalse(responseText.contains("kotlinx.serialization"))
+        }
+
+    @Test
     fun `henter sak med saksdata og regelspor`() =
         testApp { client ->
             val behandling = client.startBehandling(TestSoknader.innvilgetId)
@@ -111,6 +150,33 @@ class ForeldrepengerRoutesTest {
             )
             assertNotNull(sak.vedtak)
             assertNull(sak.manuellVurdering)
+        }
+
+    @Test
+    fun `avviser ugyldig sak id med strukturert feil`() =
+        testApp { client ->
+            val response = client.get("/api/foreldrepenger/saker/ikke-et-tall")
+
+            assertEquals(HttpStatusCode.BadRequest, response.status)
+            val error = response.errorBody()
+            assertEquals("Bad Request", error.title)
+            assertEquals(400, error.status)
+            assertEquals("id", error.errors.single().field)
+            assertEquals("Sak id må være et positivt heltall", error.errors.single().message)
+        }
+
+    @Test
+    fun `returnerer trygg strukturert 404 for manglende sak`() =
+        testApp { client ->
+            val response = client.get("/api/foreldrepenger/saker/999999")
+
+            assertEquals(HttpStatusCode.NotFound, response.status)
+            val responseText = response.bodyAsText()
+            val error = serializer.decodeFromString<ErrorResponse>(responseText)
+            assertEquals("Not Found", error.title)
+            assertEquals(404, error.status)
+            assertEquals("Saken finnes ikke", error.detail)
+            assertFalse(responseText.contains("999999"))
         }
 
     @Test
@@ -157,6 +223,72 @@ class ForeldrepengerRoutesTest {
                     setBody(request)
                 }
             assertEquals(HttpStatusCode.Conflict, duplicateResponse.status)
+            val duplicateError = duplicateResponse.errorBody()
+            assertEquals("Conflict", duplicateError.title)
+            assertEquals(409, duplicateError.status)
+            assertEquals("Saken venter ikke på manuell beslutning", duplicateError.detail)
+        }
+
+    @Test
+    fun `avviser ugyldig manuell beslutning uten aa endre sak`() =
+        testApp { client ->
+            val behandling = client.startBehandling(TestSoknader.manuellVurderingId)
+            val request =
+                ManuellBeslutningRequest(
+                    type = ManuellBeslutningTypeDto.INNVILGELSE,
+                    begrunnelse = " ",
+                    besluttetAv = " ",
+                )
+
+            val response =
+                client.post("/api/foreldrepenger/saker/${behandling.sakId}/beslutning") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }
+
+            assertEquals(HttpStatusCode.BadRequest, response.status)
+            val error = response.errorBody()
+            assertEquals("Bad Request", error.title)
+            assertEquals(400, error.status)
+            assertEquals("Manuell beslutning inneholder ugyldige verdier", error.detail)
+            assertContentEquals(
+                listOf("begrunnelse", "besluttetAv"),
+                error.errors.map { it.field },
+            )
+
+            val sakEtterFeil =
+                client
+                    .get("/api/foreldrepenger/saker/${behandling.sakId}")
+                    .body<SakResponse>()
+            assertEquals(SakStatusDto.TIL_MANUELL_VURDERING, sakEtterFeil.status)
+            assertNull(sakEtterFeil.vedtak)
+            assertNotNull(sakEtterFeil.manuellVurdering)
+        }
+
+    @Test
+    fun `avviser ugyldig manuell beslutningstype med trygg feil`() =
+        testApp { client ->
+            val behandling = client.startBehandling(TestSoknader.manuellVurderingId)
+            val response =
+                client.post("/api/foreldrepenger/saker/${behandling.sakId}/beslutning") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"type":"UGYLDIG","begrunnelse":"Kontrollert","besluttetAv":"Z990123"}""")
+                }
+
+            assertEquals(HttpStatusCode.BadRequest, response.status)
+            val responseText = response.bodyAsText()
+            val error = serializer.decodeFromString<ErrorResponse>(responseText)
+            assertEquals("Bad Request", error.title)
+            assertEquals(400, error.status)
+            assertFalse(responseText.contains("UGYLDIG"))
+            assertFalse(responseText.contains("ManuellBeslutningTypeDto"))
+
+            val sakEtterFeil =
+                client
+                    .get("/api/foreldrepenger/saker/${behandling.sakId}")
+                    .body<SakResponse>()
+            assertEquals(SakStatusDto.TIL_MANUELL_VURDERING, sakEtterFeil.status)
+            assertNull(sakEtterFeil.vedtak)
         }
 
     @Test
@@ -183,4 +315,6 @@ class ForeldrepengerRoutesTest {
         assertEquals(HttpStatusCode.Created, response.status)
         return response.body()
     }
+
+    private suspend fun HttpResponse.errorBody(): ErrorResponse = serializer.decodeFromString(bodyAsText())
 }

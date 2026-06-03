@@ -11,4 +11,11 @@ data class ErrorResponse(
     val title: String,
     val status: Int,
     val detail: String? = null,
+    val errors: List<FieldError> = emptyList(),
+)
+
+@Serializable
+data class FieldError(
+    val field: String,
+    val message: String,
 )

@@ -8,6 +8,9 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import no.nav.fagprove.api.ApiConflictException
+import no.nav.fagprove.api.ApiNotFoundException
+import no.nav.fagprove.api.ApiValidationException
 import no.nav.fagprove.domain.ManuellBeslutning
 import no.nav.fagprove.domain.RegelStatus
 import no.nav.fagprove.domain.Regelresultat
@@ -15,7 +18,7 @@ import no.nav.fagprove.domain.Saksbehandling
 import no.nav.fagprove.domain.Soknad
 import no.nav.fagprove.domain.Vedtak
 import no.nav.fagprove.dto.BehandlingResultatResponse
-import no.nav.fagprove.dto.ErrorResponse
+import no.nav.fagprove.dto.FieldError
 import no.nav.fagprove.dto.InntektDto
 import no.nav.fagprove.dto.KvoterDto
 import no.nav.fagprove.dto.ManuellBeslutningRequest
@@ -56,10 +59,10 @@ fun Route.foreldrepengerRoutes(
 
         post("/vedtak") {
             val request = call.receive<StartBehandlingRequest>()
-            val soknadId = request.soknadId.toUuidOrBadRequest("soknadId")
+            val soknadId = request.validertSoknadId()
             val soknad =
                 soknadRepository.hent(soknadId)
-                    ?: return@post call.respondNotFound("Søknad $soknadId finnes ikke")
+                    ?: throw ApiNotFoundException("Søknaden finnes ikke")
 
             val resultat = Saksbehandling.behandle(soknad)
             val behandling =
@@ -93,13 +96,13 @@ fun Route.foreldrepengerRoutes(
         }
 
         get("/saker/{id}") {
-            val sakId = call.sakId() ?: return@get
+            val sakId = call.sakId()
             val behandling =
                 behandlingRepository.hent(sakId)
-                    ?: return@get call.respondNotFound("Sak $sakId finnes ikke")
+                    ?: throw ApiNotFoundException("Saken finnes ikke")
             val soknad =
                 soknadRepository.hent(behandling.soknadId)
-                    ?: return@get call.respondNotFound("Søknad ${behandling.soknadId} finnes ikke")
+                    ?: throw ApiNotFoundException("Søknaden finnes ikke")
 
             call.respond(
                 behandling.toSakResponse(
@@ -110,31 +113,31 @@ fun Route.foreldrepengerRoutes(
         }
 
         post("/saker/{id}/beslutning") {
-            val sakId = call.sakId() ?: return@post
+            val sakId = call.sakId()
             val request = call.receive<ManuellBeslutningRequest>()
-            request.valider()
+            val validertRequest = request.valider()
 
             val behandling =
                 behandlingRepository.hent(sakId)
-                    ?: return@post call.respondNotFound("Sak $sakId finnes ikke")
+                    ?: throw ApiNotFoundException("Saken finnes ikke")
             val soknad =
                 soknadRepository.hent(behandling.soknadId)
-                    ?: return@post call.respondNotFound("Søknad ${behandling.soknadId} finnes ikke")
+                    ?: throw ApiNotFoundException("Søknaden finnes ikke")
 
             if (!behandling.venterPaaManuellBeslutning(vedtakRepository.hentForBehandling(sakId))) {
-                return@post call.respondConflict("Sak $sakId venter ikke på manuell beslutning")
+                throw ApiConflictException("Saken venter ikke på manuell beslutning")
             }
 
             val vedtak =
                 Saksbehandling.besluttManuelt(
                     soknad = soknad,
-                    beslutning = request.type.toDomain(),
-                    begrunnelse = request.begrunnelse.trim(),
+                    beslutning = validertRequest.type,
+                    begrunnelse = validertRequest.begrunnelse,
                 )
             vedtakRepository.lagre(
                 behandlingId = sakId,
                 vedtak = vedtak,
-                besluttetAv = request.besluttetAv.trim(),
+                besluttetAv = validertRequest.besluttetAv,
             )
 
             val oppdatertBehandling = checkNotNull(behandlingRepository.hent(sakId))
@@ -149,15 +152,71 @@ fun Route.foreldrepengerRoutes(
 }
 
 private const val AUTOMATISK_SAKSBEHANDLER = "system"
+private const val MAKS_BEGRUNNELSE_TEGN = 1_000
+private const val MAKS_BESLUTTET_AV_TEGN = 100
 
-private fun String.toUuidOrBadRequest(fieldName: String): UUID =
-    runCatching { UUID.fromString(this) }
-        .getOrElse { throw IllegalArgumentException("$fieldName må være en gyldig UUID") }
+private data class ValidertManuellBeslutningRequest(
+    val type: ManuellBeslutning,
+    val begrunnelse: String,
+    val besluttetAv: String,
+)
 
-private fun ManuellBeslutningRequest.valider() {
-    require(begrunnelse.isNotBlank()) { "begrunnelse må fylles ut" }
-    require(besluttetAv.isNotBlank()) { "besluttetAv må fylles ut" }
-    require(besluttetAv.length <= 100) { "besluttetAv kan maksimalt være 100 tegn" }
+private fun StartBehandlingRequest.validertSoknadId(): UUID {
+    val trimmedSoknadId = soknadId.trim()
+    return runCatching { UUID.fromString(trimmedSoknadId) }
+        .getOrElse {
+            throw ApiValidationException(
+                errors =
+                    listOf(
+                        FieldError(
+                            field = "soknadId",
+                            message = "soknadId må være en gyldig UUID",
+                        ),
+                    ),
+            )
+        }
+}
+
+private fun ManuellBeslutningRequest.valider(): ValidertManuellBeslutningRequest {
+    val trimmedBegrunnelse = begrunnelse.trim()
+    val trimmedBesluttetAv = besluttetAv.trim()
+    val errors = mutableListOf<FieldError>()
+
+    if (trimmedBegrunnelse.isBlank()) {
+        errors += FieldError(field = "begrunnelse", message = "begrunnelse må fylles ut")
+    }
+    if (trimmedBegrunnelse.length > MAKS_BEGRUNNELSE_TEGN) {
+        errors +=
+            FieldError(
+                field = "begrunnelse",
+                message = "begrunnelse kan maksimalt være $MAKS_BEGRUNNELSE_TEGN tegn",
+            )
+    }
+    if (trimmedBesluttetAv.isBlank()) {
+        errors += FieldError(field = "besluttetAv", message = "besluttetAv må fylles ut")
+    }
+    if (trimmedBesluttetAv.length > MAKS_BESLUTTET_AV_TEGN) {
+        errors +=
+            FieldError(
+                field = "besluttetAv",
+                message = "besluttetAv kan maksimalt være $MAKS_BESLUTTET_AV_TEGN tegn",
+            )
+    }
+    if (trimmedBesluttetAv.any(Character::isISOControl)) {
+        errors += FieldError(field = "besluttetAv", message = "besluttetAv kan ikke inneholde kontrolltegn")
+    }
+    if (errors.isNotEmpty()) {
+        throw ApiValidationException(
+            detail = "Manuell beslutning inneholder ugyldige verdier",
+            errors = errors,
+        )
+    }
+
+    return ValidertManuellBeslutningRequest(
+        type = type.toDomain(),
+        begrunnelse = trimmedBegrunnelse,
+        besluttetAv = trimmedBesluttetAv,
+    )
 }
 
 private fun ManuellBeslutningTypeDto.toDomain(): ManuellBeslutning =
@@ -166,44 +225,22 @@ private fun ManuellBeslutningTypeDto.toDomain(): ManuellBeslutning =
         ManuellBeslutningTypeDto.AVSLAG -> ManuellBeslutning.AVSLAG
     }
 
-private suspend fun ApplicationCall.sakId(): Long? {
+private fun ApplicationCall.sakId(): Long {
     val rawId = parameters["id"]
     val sakId = rawId?.toLongOrNull()
     if (sakId == null || sakId <= 0) {
-        respond(
-            HttpStatusCode.BadRequest,
-            ErrorResponse(
-                title = "Bad Request",
-                status = 400,
-                detail = "Sak id må være et positivt heltall",
-            ),
+        throw ApiValidationException(
+            errors =
+                listOf(
+                    FieldError(
+                        field = "id",
+                        message = "Sak id må være et positivt heltall",
+                    ),
+                ),
         )
-        return null
     }
 
     return sakId
-}
-
-private suspend fun ApplicationCall.respondNotFound(detail: String) {
-    respond(
-        HttpStatusCode.NotFound,
-        ErrorResponse(
-            title = "Not Found",
-            status = 404,
-            detail = detail,
-        ),
-    )
-}
-
-private suspend fun ApplicationCall.respondConflict(detail: String) {
-    respond(
-        HttpStatusCode.Conflict,
-        ErrorResponse(
-            title = "Conflict",
-            status = 409,
-            detail = detail,
-        ),
-    )
 }
 
 private fun Behandling.venterPaaManuellBeslutning(lagretVedtak: LagretVedtak?): Boolean =
