@@ -9,7 +9,7 @@ import org.testcontainers.containers.PostgreSQLContainer
 /**
  * Responsible for database connection setup and schema migration.
  * Runs Flyway migrations for PostgreSQL configs (Testcontainers and External).
- * H2 InMemory skips Flyway — repositories use SchemaUtils.create() instead.
+ * H2 InMemory skips Flyway and connects directly for app/test startup.
  */
 object DatabaseFactory {
     fun init(
