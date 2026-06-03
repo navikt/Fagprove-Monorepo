@@ -10,18 +10,19 @@ data class BeregningsgrunnlagResultat(
 
 object BeregningsgrunnlagBeregner {
     private const val SEKS_G = 780_960
+    private const val BEREGNINGSPERIODE_MANEDER = 3
 
     fun beregn(soknad: Soknad): BeregningsgrunnlagResultat {
-        val sisteTreManeder = soknad.sisteHeleManeder(3)
+        val beregningsmaneder = soknad.sisteHeleManeder(BEREGNINGSPERIODE_MANEDER)
         val inntektPerManed =
-            sisteTreManeder.map { maned ->
+            beregningsmaneder.map { maned ->
                 soknad.inntekter
                     .filter { it.type != InntektsType.STIPEND_LANEKASSEN }
                     .filter { it.maned == maned }
                     .sumOf { it.belop.kroner }
             }
 
-        val beregnetAarsinntekt = (inntektPerManed.sum() / 3) * 12
+        val beregnetAarsinntekt = (inntektPerManed.sum() / inntektPerManed.size) * 12
         val oppgittAarsinntekt = soknad.oppgittAarsinntekt.kroner
 
         if (oppgittAarsinntekt > 0 && harAvvikOverTjuefemProsent(beregnetAarsinntekt, oppgittAarsinntekt)) {
