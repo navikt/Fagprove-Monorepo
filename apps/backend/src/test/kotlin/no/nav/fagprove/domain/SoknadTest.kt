@@ -7,8 +7,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class SoknadTest {
-    private fun lagInntekter(antall: Int) =
-        (1..antall).map {
+    private fun createIncome(count: Int) =
+        (1..count).map {
             Inntektsregistrering(
                 maned = YearMonth.of(2025, it.coerceAtMost(12)),
                 type = InntektsType.ARBEID,
@@ -17,12 +17,12 @@ class SoknadTest {
         }
 
     @Test
-    fun `kan opprette en gyldig soknad`() {
+    fun `should create valid Soknad`() {
         val soknad =
             Soknad(
                 fnr = "12345678901",
                 erNorskBorger = true,
-                inntekter = lagInntekter(6),
+                inntekter = createIncome(6),
                 stonadsperiode =
                     Periode(
                         fra = LocalDate.of(2025, 6, 1),
@@ -36,7 +36,7 @@ class SoknadTest {
     }
 
     @Test
-    fun `fnr med feil lengde kaster exception`() {
+    fun `should reject fnr with wrong length`() {
         assertFailsWith<IllegalArgumentException> {
             Soknad(
                 fnr = "123",
@@ -53,7 +53,7 @@ class SoknadTest {
     }
 
     @Test
-    fun `fnr med bokstaver kaster exception`() {
+    fun `should reject fnr with non-digit characters`() {
         assertFailsWith<IllegalArgumentException> {
             Soknad(
                 fnr = "1234567890a",

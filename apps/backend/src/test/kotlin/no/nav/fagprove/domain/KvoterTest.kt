@@ -6,7 +6,7 @@ import kotlin.test.assertEquals
 
 class KvoterTest {
     @Test
-    fun `kan opprette kvoter med tre perioder`() {
+    fun `should create Kvoter with three periods`() {
         val kvoter =
             Kvoter(
                 modrekvote =

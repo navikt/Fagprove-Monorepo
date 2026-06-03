@@ -6,35 +6,35 @@ import kotlin.test.assertIs
 
 class VedtakTest {
     @Test
-    fun `innvilget vedtak har belop`() {
+    fun `Innvilget should have belop`() {
         val vedtak: Vedtak = Vedtak.Innvilget(belop = Penger(50000))
         assertIs<Vedtak.Innvilget>(vedtak)
         assertEquals(Penger(50000), vedtak.belop)
     }
 
     @Test
-    fun `avslag vedtak har begrunnelse`() {
+    fun `Avslag should have begrunnelse`() {
         val vedtak: Vedtak = Vedtak.Avslag(begrunnelse = "Ikke oppfylt opptjeningstid")
         assertIs<Vedtak.Avslag>(vedtak)
         assertEquals("Ikke oppfylt opptjeningstid", vedtak.begrunnelse)
     }
 
     @Test
-    fun `engangsstonad vedtak har belop`() {
+    fun `Engangsstonad should have belop`() {
         val vedtak: Vedtak = Vedtak.Engangsstonad(belop = Penger(92648))
         assertIs<Vedtak.Engangsstonad>(vedtak)
         assertEquals(Penger(92648), vedtak.belop)
     }
 
     @Test
-    fun `manuell vurdering vedtak har grunn`() {
+    fun `ManuellVurdering should have grunn`() {
         val vedtak: Vedtak = Vedtak.ManuellVurdering(grunn = "Behøver manuell gjennomgang")
         assertIs<Vedtak.ManuellVurdering>(vedtak)
         assertEquals("Behøver manuell gjennomgang", vedtak.grunn)
     }
 
     @Test
-    fun `kan bruke when-uttrykk over alle varianter`() {
+    fun `should be exhaustive in when expression`() {
         val vedtak: Vedtak = Vedtak.Innvilget(belop = Penger(30000))
         val beskrivelse =
             when (vedtak) {
