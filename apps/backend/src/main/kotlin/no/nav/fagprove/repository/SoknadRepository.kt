@@ -76,6 +76,16 @@ class SoknadRepository(
             soknadRow?.toSoknad()
         }
 
+    fun hentAlle(): List<Soknad> =
+        inRepositoryTransaction(database) {
+            SoknadTable
+                .selectAll()
+                .orderBy(
+                    SoknadTable.innsendt to SortOrder.ASC,
+                    SoknadTable.fnr to SortOrder.ASC,
+                ).map { it.toSoknad() }
+        }
+
     private fun ResultRow.toSoknad(): Soknad {
         val soknadId = this[SoknadTable.id]
         val inntekter =
