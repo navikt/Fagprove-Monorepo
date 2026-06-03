@@ -8,11 +8,16 @@ data class Soknad(
     val fnr: String,
     val erNorskBorger: Boolean,
     val inntekter: List<Inntektsregistrering>,
-    val stonadsperiode: Periode,
+    val termindato: LocalDate,
+    val rettsforhold: Rettsforhold,
+    val dekningsgrad: Dekningsgrad,
+    val antallBarn: Int,
+    val oppgittAarsinntekt: Penger,
     val innsendt: LocalDate,
 ) {
     init {
         require(fnr.length == 11) { "Fødselsnummer må være 11 siffer" }
         require(fnr.all { it.isDigit() }) { "Fødselsnummer kan kun inneholde siffer" }
+        require(antallBarn >= 1) { "Antall barn må være minst 1" }
     }
 }
