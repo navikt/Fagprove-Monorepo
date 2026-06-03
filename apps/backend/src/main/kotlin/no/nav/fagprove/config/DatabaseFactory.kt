@@ -11,7 +11,9 @@ import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.postgresql.ds.PGSimpleDataSource
 import org.testcontainers.containers.PostgreSQLContainer
+import javax.sql.DataSource
 
 /**
  * Responsible for database connection setup and schema migration.
@@ -78,11 +80,28 @@ object DatabaseFactory {
         user: String,
         password: String,
     ) {
+        migrationFlyway(url, user, password).migrate()
+    }
+
+    internal fun migrationFlyway(
+        url: String,
+        user: String,
+        password: String,
+    ): Flyway =
         Flyway
             .configure()
-            .dataSource(url, user, password)
+            .dataSource(migrationDataSource(url, user, password))
             .locations("classpath:db/migration")
             .load()
-            .migrate()
-    }
+
+    internal fun migrationDataSource(
+        url: String,
+        user: String,
+        password: String,
+    ): DataSource =
+        PGSimpleDataSource().apply {
+            setURL(url)
+            this.user = user
+            this.password = password
+        }
 }
