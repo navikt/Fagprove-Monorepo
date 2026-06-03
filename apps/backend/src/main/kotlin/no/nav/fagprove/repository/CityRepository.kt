@@ -39,13 +39,15 @@ class CityRepository(
 
     suspend fun findAll(): List<CityResponse> =
         dbQuery {
-            Cities.selectAll()
+            Cities
+                .selectAll()
                 .map { CityResponse(it[Cities.id], it[Cities.name], it[Cities.population]) }
         }
 
     suspend fun findById(id: Int): City? =
         dbQuery {
-            Cities.selectAll()
+            Cities
+                .selectAll()
                 .where { Cities.id eq id }
                 .map { City(it[Cities.name], it[Cities.population]) }
                 .singleOrNull()

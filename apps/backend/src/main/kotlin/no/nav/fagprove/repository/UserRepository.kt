@@ -39,13 +39,15 @@ class UserRepository(
 
     suspend fun findAll(): List<UserResponse> =
         dbQuery {
-            Users.selectAll()
+            Users
+                .selectAll()
                 .map { UserResponse(it[Users.id], it[Users.name], it[Users.age]) }
         }
 
     suspend fun findById(id: Int): User? =
         dbQuery {
-            Users.selectAll()
+            Users
+                .selectAll()
                 .where { Users.id eq id }
                 .map { User(it[Users.name], it[Users.age]) }
                 .singleOrNull()
