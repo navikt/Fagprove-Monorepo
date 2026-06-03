@@ -7,3 +7,4 @@ ktor:
 # Database config is read from environment variables:
 # POSTGRES_URL, POSTGRES_USER, POSTGRES_PASSWORD
 # Set USE_TESTCONTAINERS=true for local development
+# Set SEED_TEST_SOKNADER=false to disable deterministic local/test seed data

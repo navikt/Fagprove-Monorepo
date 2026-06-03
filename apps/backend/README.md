@@ -60,3 +60,5 @@ docker run -p 8080:8080 fagprove-backend
 Se [`.env.example`](../../.env.example) i rotmappen for alle tilgjengelige variabler.
 
 I Nais er backend intern og nås fra frontend via `BACKEND_URL`. Staging og prod bruker Cloud SQL-variabler med `envVarPrefix: DB`.
+
+Ved lokal Testcontainers- eller H2-oppstart seedes fem deterministiske testsøknader automatisk. Sett `SEED_TEST_SOKNADER=false` for å skru dette av. Eksterne databaser seedes ikke, og `SEED_TEST_SOKNADER=true` avvises for å unngå testdata i prod-lignende miljøer.

@@ -8,6 +8,8 @@ import no.nav.fagprove.plugins.configureHTTP
 import no.nav.fagprove.plugins.configureMonitoring
 import no.nav.fagprove.plugins.configureRouting
 import no.nav.fagprove.plugins.configureSerialization
+import no.nav.fagprove.repository.SoknadRepository
+import no.nav.fagprove.seed.TestSoknadSeeder
 
 fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain
@@ -16,7 +18,12 @@ fun main(args: Array<String>) {
 
 fun Application.module() {
     val config = AppConfig.resolve()
-    DatabaseFactory.init(this, config)
+    val database = DatabaseFactory.init(this, config)
+
+    if (config.seedTestSoknader) {
+        val seededeSoknader = TestSoknadSeeder(SoknadRepository(database)).seed()
+        log.info("Seedet ${seededeSoknader.size} deterministiske testsøknader")
+    }
 
     configureHTTP()
     configureAuthentication()

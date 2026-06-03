@@ -8,6 +8,7 @@ import java.net.URI
  */
 sealed class AppConfig {
     abstract val database: DatabaseConfig
+    abstract val seedTestSoknader: Boolean
 
     data class DatabaseConfig(
         val url: String,
@@ -18,23 +19,28 @@ sealed class AppConfig {
 
     data class Testcontainers(
         override val database: DatabaseConfig,
+        override val seedTestSoknader: Boolean,
     ) : AppConfig()
 
     data class External(
         override val database: DatabaseConfig,
+        override val seedTestSoknader: Boolean,
     ) : AppConfig()
 
     data class InMemory(
         override val database: DatabaseConfig,
+        override val seedTestSoknader: Boolean,
     ) : AppConfig()
 
     companion object {
         private const val POSTGRES_DRIVER = "org.postgresql.Driver"
+        private const val SEED_TEST_SOKNADER = "SEED_TEST_SOKNADER"
 
         fun resolve(env: Map<String, String> = System.getenv()): AppConfig {
             val useTestcontainers = env["USE_TESTCONTAINERS"] == "true"
             val postgresUrl = env.value("POSTGRES_URL")
             val naisDatabase = resolveNaisDatabase(env)
+            val seedTestSoknader = env.booleanValue(SEED_TEST_SOKNADER)
 
             return when {
                 useTestcontainers ->
@@ -46,10 +52,18 @@ sealed class AppConfig {
                             password = "",
                             driver = POSTGRES_DRIVER,
                         ),
+                        seedTestSoknader = seedTestSoknader ?: true,
                     )
-                naisDatabase != null ->
-                    External(naisDatabase)
-                postgresUrl != null ->
+                naisDatabase != null -> {
+                    require(seedTestSoknader != true) {
+                        "$SEED_TEST_SOKNADER=true can only be used with in-memory or Testcontainers databases"
+                    }
+                    External(naisDatabase, seedTestSoknader = false)
+                }
+                postgresUrl != null -> {
+                    require(seedTestSoknader != true) {
+                        "$SEED_TEST_SOKNADER=true can only be used with in-memory or Testcontainers databases"
+                    }
                     External(
                         DatabaseConfig(
                             url = postgresUrl,
@@ -57,7 +71,9 @@ sealed class AppConfig {
                             password = env["POSTGRES_PASSWORD"] ?: "",
                             driver = POSTGRES_DRIVER,
                         ),
+                        seedTestSoknader = false,
                     )
+                }
                 else ->
                     InMemory(
                         DatabaseConfig(
@@ -66,6 +82,7 @@ sealed class AppConfig {
                             password = "",
                             driver = "org.h2.Driver",
                         ),
+                        seedTestSoknader = seedTestSoknader ?: true,
                     )
             }
         }
@@ -138,5 +155,14 @@ sealed class AppConfig {
         }
 
         private fun Map<String, String>.value(name: String): String? = this[name]?.takeIf { it.isNotBlank() }
+
+        private fun Map<String, String>.booleanValue(name: String): Boolean? =
+            value(name)?.let { rawValue ->
+                when (rawValue.lowercase()) {
+                    "true" -> true
+                    "false" -> false
+                    else -> throw IllegalArgumentException("$name must be true or false")
+                }
+            }
     }
 }

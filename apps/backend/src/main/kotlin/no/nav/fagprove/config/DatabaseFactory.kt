@@ -2,14 +2,21 @@ package no.nav.fagprove.config
 
 import io.ktor.events.*
 import io.ktor.server.application.*
+import no.nav.fagprove.repository.BehandlingTable
+import no.nav.fagprove.repository.InntektsregistreringTable
+import no.nav.fagprove.repository.RegelresultatTable
+import no.nav.fagprove.repository.SoknadTable
+import no.nav.fagprove.repository.VedtakTable
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.testcontainers.containers.PostgreSQLContainer
 
 /**
  * Responsible for database connection setup and schema migration.
  * Runs Flyway migrations for PostgreSQL configs (Testcontainers and External).
- * H2 InMemory skips Flyway and connects directly for app/test startup.
+ * H2 InMemory skips Flyway and uses Exposed schema creation for app/test startup.
  */
 object DatabaseFactory {
     fun init(
@@ -19,7 +26,7 @@ object DatabaseFactory {
         when (config) {
             is AppConfig.Testcontainers -> initTestcontainers(application)
             is AppConfig.External -> initExternal(config.database)
-            is AppConfig.InMemory -> connect(config.database)
+            is AppConfig.InMemory -> initInMemory(config.database)
         }
 
     private fun initTestcontainers(application: Application): Database {
@@ -42,6 +49,20 @@ object DatabaseFactory {
     private fun initExternal(dbConfig: AppConfig.DatabaseConfig): Database {
         runMigrations(dbConfig.url, dbConfig.user, dbConfig.password)
         return connect(dbConfig)
+    }
+
+    private fun initInMemory(dbConfig: AppConfig.DatabaseConfig): Database {
+        val database = connect(dbConfig)
+        transaction(database) {
+            SchemaUtils.createMissingTablesAndColumns(
+                SoknadTable,
+                InntektsregistreringTable,
+                BehandlingTable,
+                RegelresultatTable,
+                VedtakTable,
+            )
+        }
+        return database
     }
 
     private fun connect(dbConfig: AppConfig.DatabaseConfig): Database =
