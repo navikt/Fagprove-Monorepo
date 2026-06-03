@@ -66,4 +66,18 @@ class SaksbehandlingTest {
             resultat.regelspor.map { it.regel },
         )
     }
+
+    @Test
+    fun `manual innvilgelse should cap oppgitt income at 6G`() {
+        val vedtak =
+            Saksbehandling.besluttManuelt(
+                soknad = testSoknad(oppgittAarsinntekt = Penger(900_000)),
+                beslutning = ManuellBeslutning.INNVILGELSE,
+                begrunnelse = "Saksbehandler godkjenner inntektsgrunnlaget",
+            )
+
+        val innvilget = assertIs<Vedtak.Innvilget>(vedtak)
+        assertEquals(Penger(780_960), innvilget.belop)
+        assertEquals("Saksbehandler godkjenner inntektsgrunnlaget", innvilget.begrunnelse)
+    }
 }

@@ -41,6 +41,101 @@ paths:
                     examples:
                       - "Hello World!"
 
+  /api/foreldrepenger/soknader:
+    get:
+      operationId: listForeldrepengerSoknader
+      summary: List seeded foreldrepenger applications for demo processing
+      responses:
+        "200":
+          description: Seeded applications suitable for frontend listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SoknadListeResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/foreldrepenger/vedtak:
+    post:
+      operationId: startForeldrepengerBehandling
+      summary: Start rule processing for a selected application
+      description: >
+        The request identifies a søknad by UUID. The response returns the numeric sak id
+        (behandling id) that must be used with `/api/foreldrepenger/saker/{id}`.
+        Automatic outcomes are finalized immediately. Manual-review outcomes are stored
+        as an open case with regelspor and no final vedtak until a manual decision is saved.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartBehandlingRequest"
+      responses:
+        "201":
+          description: Processing started and the resulting case state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BehandlingResultatResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/foreldrepenger/saker/{id}:
+    get:
+      operationId: getForeldrepengerSak
+      summary: Get full case data by sak id
+      description: The path id is the numeric behandling/sak id returned by `POST /api/foreldrepenger/vedtak`.
+      parameters:
+        - $ref: "#/components/parameters/SakId"
+      responses:
+        "200":
+          description: Case data with søknad, regelspor, status, and vedtak or manual-review state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SakResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/foreldrepenger/saker/{id}/beslutning:
+    post:
+      operationId: decideForeldrepengerSak
+      summary: Store a manual decision for a case awaiting manual review
+      description: >
+        Supports manual innvilgelse and avslag. The endpoint rejects cases that are
+        already finalized or not awaiting manual decision.
+      parameters:
+        - $ref: "#/components/parameters/SakId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManuellBeslutningRequest"
+      responses:
+        "200":
+          description: Manual decision saved and case finalized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SakResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /internal/isalive:
     get:
       operationId: getInternalIsAlive
@@ -71,14 +166,326 @@ paths:
 
 components:
   parameters:
-    ResourceId:
+    SakId:
       name: id
       in: path
       required: true
+      description: Numeric behandling/sak id returned by `POST /api/foreldrepenger/vedtak`
       schema:
         type: integer
+        format: int64
 
   schemas:
+    SoknadListeResponse:
+      type: object
+      required:
+        - soknader
+      properties:
+        soknader:
+          type: array
+          items:
+            $ref: "#/components/schemas/SoknadListe"
+
+    SoknadListe:
+      type: object
+      description: Application summary without raw fødselsnummer
+      required:
+        - id
+        - sokerIdent
+        - innsendt
+        - termindato
+        - rettsforhold
+        - dekningsgrad
+        - antallBarn
+        - oppgittAarsinntektKroner
+      properties:
+        id:
+          type: string
+          format: uuid
+        sokerIdent:
+          type: string
+          description: Synthetic display identifier for demo use, not raw fnr
+          examples:
+            - TEST-0001
+        innsendt:
+          type: string
+          format: date
+        termindato:
+          type: string
+          format: date
+        rettsforhold:
+          type: string
+          examples:
+            - BEGGE_FORELDRE
+        dekningsgrad:
+          type: string
+          examples:
+            - HUNDRE_PROSENT
+        antallBarn:
+          type: integer
+        oppgittAarsinntektKroner:
+          type: integer
+
+    StartBehandlingRequest:
+      type: object
+      required:
+        - soknadId
+      properties:
+        soknadId:
+          type: string
+          format: uuid
+
+    BehandlingResultatResponse:
+      type: object
+      required:
+        - sakId
+        - soknadId
+        - status
+        - vedtaksvariant
+        - regelspor
+      properties:
+        sakId:
+          type: integer
+          format: int64
+        soknadId:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/SakStatus"
+        vedtaksvariant:
+          $ref: "#/components/schemas/Vedtaksvariant"
+        regelspor:
+          type: array
+          items:
+            $ref: "#/components/schemas/Regelresultat"
+        vedtak:
+          $ref: "#/components/schemas/Vedtak"
+        manuellVurdering:
+          $ref: "#/components/schemas/ManuellVurdering"
+
+    SakResponse:
+      type: object
+      required:
+        - sakId
+        - soknad
+        - status
+        - opprettetTidspunkt
+        - regelspor
+      properties:
+        sakId:
+          type: integer
+          format: int64
+        soknad:
+          $ref: "#/components/schemas/Saksdata"
+        status:
+          $ref: "#/components/schemas/SakStatus"
+        opprettetTidspunkt:
+          type: string
+          format: date-time
+        ferdigstiltTidspunkt:
+          type: string
+          format: date-time
+        regelspor:
+          type: array
+          items:
+            $ref: "#/components/schemas/Regelresultat"
+        vedtak:
+          $ref: "#/components/schemas/Vedtak"
+        manuellVurdering:
+          $ref: "#/components/schemas/ManuellVurdering"
+
+    Saksdata:
+      type: object
+      description: Case application data without raw fødselsnummer
+      required:
+        - id
+        - sokerIdent
+        - erNorskBorger
+        - innsendt
+        - termindato
+        - rettsforhold
+        - dekningsgrad
+        - antallBarn
+        - oppgittAarsinntektKroner
+        - inntekter
+      properties:
+        id:
+          type: string
+          format: uuid
+        sokerIdent:
+          type: string
+          description: Synthetic display identifier for demo use, not raw fnr
+        erNorskBorger:
+          type: boolean
+        innsendt:
+          type: string
+          format: date
+        termindato:
+          type: string
+          format: date
+        rettsforhold:
+          type: string
+        dekningsgrad:
+          type: string
+        antallBarn:
+          type: integer
+        oppgittAarsinntektKroner:
+          type: integer
+        inntekter:
+          type: array
+          items:
+            $ref: "#/components/schemas/Inntekt"
+
+    Inntekt:
+      type: object
+      required:
+        - maned
+        - type
+        - belopKroner
+      properties:
+        maned:
+          type: string
+          pattern: "^\\d{4}-\\d{2}$"
+          examples:
+            - "2026-05"
+        type:
+          type: string
+          examples:
+            - ARBEID
+        belopKroner:
+          type: integer
+
+    Regelresultat:
+      type: object
+      required:
+        - regel
+        - status
+        - begrunnelse
+      properties:
+        regel:
+          type: string
+          enum:
+            - OPPTJENING
+            - ENGANGSSTONAD
+            - BEREGNINGSGRUNNLAG
+            - STONADSPERIODE
+            - KVOTEFORDELING
+        status:
+          type: string
+          enum:
+            - OPPFYLT
+            - IKKE_OPPFYLT
+            - MANUELL_VURDERING
+        begrunnelse:
+          type: string
+
+    ManuellVurdering:
+      type: object
+      required:
+        - grunn
+      properties:
+        grunn:
+          type: string
+
+    Vedtak:
+      type: object
+      required:
+        - variant
+        - begrunnelse
+      properties:
+        variant:
+          $ref: "#/components/schemas/Vedtaksvariant"
+        begrunnelse:
+          type: string
+        belopKroner:
+          type: integer
+        stonadsperiode:
+          $ref: "#/components/schemas/Stonadsperiode"
+        kvoter:
+          $ref: "#/components/schemas/Kvoter"
+        besluttetAv:
+          type: string
+        besluttetTidspunkt:
+          type: string
+          format: date-time
+
+    Stonadsperiode:
+      type: object
+      required:
+        - fom
+        - tom
+        - uker
+      properties:
+        fom:
+          type: string
+          format: date
+        tom:
+          type: string
+          format: date
+        uker:
+          type: integer
+
+    Kvoter:
+      type: object
+      required:
+        - modrekvoteUker
+        - fedrekvoteUker
+        - fellesperiodeUker
+        - bonusuker
+        - forskuddUker
+        - totalUker
+      properties:
+        modrekvoteUker:
+          type: integer
+        fedrekvoteUker:
+          type: integer
+        fellesperiodeUker:
+          type: integer
+        bonusuker:
+          type: integer
+        forskuddUker:
+          type: integer
+        totalUker:
+          type: integer
+
+    ManuellBeslutningRequest:
+      type: object
+      required:
+        - type
+        - begrunnelse
+        - besluttetAv
+      properties:
+        type:
+          $ref: "#/components/schemas/ManuellBeslutningType"
+        begrunnelse:
+          type: string
+          minLength: 1
+        besluttetAv:
+          type: string
+          minLength: 1
+          maxLength: 100
+
+    SakStatus:
+      type: string
+      enum:
+        - OPPRETTET
+        - TIL_MANUELL_VURDERING
+        - FERDIGSTILT
+
+    Vedtaksvariant:
+      type: string
+      enum:
+        - INNVILGET
+        - AVSLAG
+        - ENGANGSSTONAD
+        - MANUELL_VURDERING
+
+    ManuellBeslutningType:
+      type: string
+      enum:
+        - INNVILGELSE
+        - AVSLAG
+
     Error:
       type: object
       description: RFC 7807 Problem Details
@@ -111,6 +518,16 @@ components:
             $ref: "#/components/schemas/Error"
     NotFound:
       description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict:
+      description: Request conflicts with the current resource state
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     InternalError:
       description: Internal server error
       content:

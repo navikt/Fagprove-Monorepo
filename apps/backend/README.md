@@ -27,16 +27,20 @@ Serveren starter på `http://localhost:8080`.
 
 ## API-endepunkter
 
-| Metode | Sti            | Beskrivelse              |
-|--------|----------------|--------------------------|
-| GET    | `/`            | Helsesjekk               |
-| GET    | `/hello`       | JSON-hilsen til frontend |
-| GET    | `/isalive`     | Liveness probe           |
-| GET    | `/isready`     | Readiness probe          |
-| GET    | `/internal/isalive` | Intern liveness probe |
-| GET    | `/internal/isready` | Intern readiness probe |
-| GET    | `/internal/metrics` | Prometheus-metrikker |
-| GET    | `/openapi`     | Swagger UI               |
+| Metode | Sti | Beskrivelse |
+|--------|-----|-------------|
+| GET | `/` | Helsesjekk |
+| GET | `/hello` | JSON-hilsen til frontend |
+| GET | `/isalive` | Liveness probe |
+| GET | `/isready` | Readiness probe |
+| GET | `/api/foreldrepenger/soknader` | Seedede testsøknader for demo/listing uten rått fødselsnummer |
+| POST | `/api/foreldrepenger/vedtak` | Starter behandling av valgt søknad og returnerer sak-id, status, regelspor og vedtak/manuell vurdering |
+| GET | `/api/foreldrepenger/saker/{id}` | Henter sak med søknadsdata, regelspor, status og vedtak/manuell vurdering. `{id}` er sak-/behandling-id fra `/vedtak` |
+| POST | `/api/foreldrepenger/saker/{id}/beslutning` | Lagrer manuell innvilgelse eller avslag for en sak som venter på manuell beslutning |
+| GET | `/internal/isalive` | Intern liveness probe |
+| GET | `/internal/isready` | Intern readiness probe |
+| GET | `/internal/metrics` | Prometheus-metrikker |
+| GET | `/openapi` | Swagger UI |
 
 ## Bygg og test
 
