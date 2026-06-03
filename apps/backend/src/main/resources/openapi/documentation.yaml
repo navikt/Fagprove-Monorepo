@@ -81,6 +81,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -133,6 +135,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -174,6 +178,7 @@ components:
       schema:
         type: integer
         format: int64
+        minimum: 1
 
   schemas:
     SoknadListeResponse:
@@ -234,6 +239,7 @@ components:
         soknadId:
           type: string
           format: uuid
+          minLength: 1
 
     BehandlingResultatResponse:
       type: object
@@ -460,6 +466,7 @@ components:
         begrunnelse:
           type: string
           minLength: 1
+          maxLength: 1000
         besluttetAv:
           type: string
           minLength: 1
@@ -507,30 +514,88 @@ components:
         detail:
           type: string
           examples:
-            - "Navn kan ikke være tomt"
+            - "Forespørselen inneholder ugyldige verdier"
+        errors:
+          type: array
+          description: Field-level validation errors when the request reached DTO validation.
+          items:
+            $ref: "#/components/schemas/FieldError"
+
+    FieldError:
+      type: object
+      required:
+        - field
+        - message
+      properties:
+        field:
+          type: string
+          examples:
+            - soknadId
+        message:
+          type: string
+          examples:
+            - "soknadId må være en gyldig UUID"
 
   responses:
     BadRequest:
-      description: Invalid request body or parameters
+      description: Invalid JSON, missing required fields, invalid parameters, or validation errors
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+          examples:
+            validation:
+              summary: Field validation failed
+              value:
+                title: Bad Request
+                status: 400
+                detail: Forespørselen inneholder ugyldige verdier
+                errors:
+                  - field: soknadId
+                    message: soknadId må være en gyldig UUID
+            invalidJson:
+              summary: Body could not be parsed
+              value:
+                title: Bad Request
+                status: 400
+                detail: Forespørselen har ugyldig JSON eller mangler påkrevde felter
     NotFound:
       description: Resource not found
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+          example:
+            title: Not Found
+            status: 404
+            detail: Saken finnes ikke
     Conflict:
       description: Request conflicts with the current resource state
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-    InternalError:
-      description: Internal server error
+          example:
+            title: Conflict
+            status: 409
+            detail: Saken venter ikke på manuell beslutning
+    UnsupportedMediaType:
+      description: Request body must use JSON content type
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+          example:
+            title: Unsupported Media Type
+            status: 415
+            detail: Content-Type må være application/json
+    InternalError:
+      description: Internal server error without stack traces or implementation details
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            title: Internal Server Error
+            status: 500
+            detail: En uventet feil oppstod
