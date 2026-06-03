@@ -15,13 +15,12 @@ object DatabaseFactory {
     fun init(
         application: Application,
         config: AppConfig,
-    ): Database {
-        return when (config) {
+    ): Database =
+        when (config) {
             is AppConfig.Testcontainers -> initTestcontainers(application)
             is AppConfig.External -> initExternal(config.database)
             is AppConfig.InMemory -> connect(config.database)
         }
-    }
 
     private fun initTestcontainers(application: Application): Database {
         application.log.info("Starting PostgreSQL via Testcontainers...")
@@ -45,21 +44,21 @@ object DatabaseFactory {
         return connect(dbConfig)
     }
 
-    private fun connect(dbConfig: AppConfig.DatabaseConfig): Database {
-        return Database.connect(
+    private fun connect(dbConfig: AppConfig.DatabaseConfig): Database =
+        Database.connect(
             url = dbConfig.url,
             driver = dbConfig.driver,
             user = dbConfig.user,
             password = dbConfig.password,
         )
-    }
 
     private fun runMigrations(
         url: String,
         user: String,
         password: String,
     ) {
-        Flyway.configure()
+        Flyway
+            .configure()
             .dataSource(url, user, password)
             .locations("classpath:db/migration")
             .load()

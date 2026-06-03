@@ -5,15 +5,15 @@ import no.nav.fagprove.dto.CityRequest
 import no.nav.fagprove.dto.CityResponse
 import no.nav.fagprove.repository.CityRepository
 
-class CityService(private val repository: CityRepository) {
+class CityService(
+    private val repository: CityRepository,
+) {
     suspend fun create(request: CityRequest): Int {
         val city = City(name = request.name, population = request.population)
         return repository.create(city)
     }
 
-    suspend fun getAll(): List<CityResponse> {
-        return repository.findAll()
-    }
+    suspend fun getAll(): List<CityResponse> = repository.findAll()
 
     suspend fun getById(id: Int): CityResponse? {
         val city = repository.findById(id) ?: return null
@@ -28,7 +28,5 @@ class CityService(private val repository: CityRepository) {
         return repository.update(id, city)
     }
 
-    suspend fun delete(id: Int): Int {
-        return repository.delete(id)
-    }
+    suspend fun delete(id: Int): Int = repository.delete(id)
 }

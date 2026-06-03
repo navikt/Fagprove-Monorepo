@@ -14,7 +14,8 @@ import no.nav.fagprove.service.CityService
 import no.nav.fagprove.service.UserService
 
 fun main(args: Array<String>) {
-    io.ktor.server.netty.EngineMain.main(args)
+    io.ktor.server.netty.EngineMain
+        .main(args)
 }
 
 fun Application.module() {

@@ -16,11 +16,17 @@ sealed class AppConfig {
         val driver: String,
     )
 
-    data class Testcontainers(override val database: DatabaseConfig) : AppConfig()
+    data class Testcontainers(
+        override val database: DatabaseConfig,
+    ) : AppConfig()
 
-    data class External(override val database: DatabaseConfig) : AppConfig()
+    data class External(
+        override val database: DatabaseConfig,
+    ) : AppConfig()
 
-    data class InMemory(override val database: DatabaseConfig) : AppConfig()
+    data class InMemory(
+        override val database: DatabaseConfig,
+    ) : AppConfig()
 
     companion object {
         private const val POSTGRES_DRIVER = "org.postgresql.Driver"
