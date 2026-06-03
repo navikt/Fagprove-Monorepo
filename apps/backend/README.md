@@ -36,16 +36,6 @@ Serveren starter på `http://localhost:8080`.
 | GET    | `/internal/isalive` | Intern liveness probe |
 | GET    | `/internal/isready` | Intern readiness probe |
 | GET    | `/internal/metrics` | Prometheus-metrikker |
-| GET    | `/cities`      | Hent alle byer           |
-| POST   | `/cities`      | Opprett by               |
-| GET    | `/cities/{id}` | Hent by med ID           |
-| PUT    | `/cities/{id}` | Oppdater by              |
-| DELETE | `/cities/{id}` | Slett by                 |
-| GET    | `/users`       | Hent alle brukere        |
-| POST   | `/users`       | Opprett bruker           |
-| GET    | `/users/{id}`  | Hent bruker med ID       |
-| PUT    | `/users/{id}`  | Oppdater bruker          |
-| DELETE | `/users/{id}`  | Slett bruker             |
 | GET    | `/openapi`     | Swagger UI               |
 
 ## Bygg og test
