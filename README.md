@@ -1,6 +1,6 @@
-# Fagprøve Monorepo Template
+# Fagprøve Monorepo
 
-Fullstack-mal for fagprøve med Astro/React-frontend, Ktor-backend og Nais-deploy.
+Fullstack-app for fagprøve med Astro/React-frontend, Ktor-backend og Nais-deploy.
 
 ## Kom i gang
 
@@ -38,8 +38,6 @@ Frontend er en Astro SSR-app med React-komponenter og Nav Aksel. Nettleseren kal
 
 Backend er en Ktor-applikasjon med REST-endepunkter for `cities` og `users`. I Nais er backend intern og tilgjengelig fra frontend gjennom `accessPolicy`. Staging og prod bruker Cloud SQL med `envVarPrefix: DB`.
 
-Les [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for systemkontekst, beslutningskart og regler for nye ADR-er. Les [`docs/adr-technology-decisions.md`](docs/adr-technology-decisions.md) for detaljerte teknologivalg.
-
 ## Miljøvariabler
 
 Se [`.env.example`](.env.example) for lokal kjøring og Nais-variabler. De viktigste er:
@@ -50,14 +48,3 @@ Se [`.env.example`](.env.example) for lokal kjøring og Nais-variabler. De vikti
 | `USE_TESTCONTAINERS` | Backend   | Starter lokal PostgreSQL med Docker når `true` |
 | `POSTGRES_URL`       | Backend   | JDBC-URL til ekstern lokal database            |
 | `DB_*`               | Backend   | Cloud SQL-variabler fra Nais                   |
-
-## Deploy
-
-Se [`docs/DEPLOY.md`](docs/DEPLOY.md) for Nais-oppsett, PR-miljø, staging/prod og sjekkpunkter før fagprøve.
-
-## Videre lesing
-
-- [`apps/frontend/README.md`](apps/frontend/README.md)
-- [`apps/backend/README.md`](apps/backend/README.md)
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-- [`docs/adr-technology-decisions.md`](docs/adr-technology-decisions.md)
