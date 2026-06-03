@@ -1,32 +1,37 @@
 package no.nav.fagprove.domain
 
-import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class KvoterTest {
     @Test
-    fun `should create Kvoter with three periods`() {
+    fun `should create Kvoter when weeks sum to total`() {
         val kvoter =
             Kvoter(
-                modrekvote =
-                    Periode(
-                        fra = LocalDate.of(2025, 6, 1),
-                        til = LocalDate.of(2025, 9, 30),
-                    ),
-                fedrekvote =
-                    Periode(
-                        fra = LocalDate.of(2025, 10, 1),
-                        til = LocalDate.of(2026, 1, 31),
-                    ),
-                fellesperiode =
-                    Periode(
-                        fra = LocalDate.of(2026, 2, 1),
-                        til = LocalDate.of(2026, 5, 31),
-                    ),
+                modrekvote = Uker(15),
+                fedrekvote = Uker(15),
+                fellesperiode = Uker(16),
+                bonusuker = Uker(0),
+                forskuddUker = Uker(3),
+                total = Uker(49),
             )
-        assertEquals(LocalDate.of(2025, 6, 1), kvoter.modrekvote.fra)
-        assertEquals(LocalDate.of(2026, 1, 31), kvoter.fedrekvote.til)
-        assertEquals(LocalDate.of(2026, 5, 31), kvoter.fellesperiode.til)
+        assertEquals(Uker(15), kvoter.modrekvote)
+        assertEquals(Uker(16), kvoter.fellesperiode)
+        assertEquals(Uker(49), kvoter.total)
+    }
+
+    @Test
+    fun `should reject Kvoter when weeks do not sum to total`() {
+        assertFailsWith<IllegalArgumentException> {
+            Kvoter(
+                modrekvote = Uker(15),
+                fedrekvote = Uker(15),
+                fellesperiode = Uker(15),
+                bonusuker = Uker(0),
+                forskuddUker = Uker(3),
+                total = Uker(49),
+            )
+        }
     }
 }

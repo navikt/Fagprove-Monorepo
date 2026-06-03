@@ -7,7 +7,12 @@ import kotlin.test.assertIs
 class VedtakTest {
     @Test
     fun `Innvilget should have belop`() {
-        val vedtak: Vedtak = Vedtak.Innvilget(belop = Penger(50000))
+        val vedtak: Vedtak =
+            Vedtak.Innvilget(
+                belop = Penger(50000),
+                stonadsperiode = testStonadsperiode(),
+                kvoter = testKvoter(),
+            )
         assertIs<Vedtak.Innvilget>(vedtak)
         assertEquals(Penger(50000), vedtak.belop)
     }
@@ -35,7 +40,12 @@ class VedtakTest {
 
     @Test
     fun `should be exhaustive in when expression`() {
-        val vedtak: Vedtak = Vedtak.Innvilget(belop = Penger(30000))
+        val vedtak: Vedtak =
+            Vedtak.Innvilget(
+                belop = Penger(30000),
+                stonadsperiode = testStonadsperiode(),
+                kvoter = testKvoter(),
+            )
         val beskrivelse =
             when (vedtak) {
                 is Vedtak.Innvilget -> "Innvilget: ${vedtak.belop.kroner} kr"

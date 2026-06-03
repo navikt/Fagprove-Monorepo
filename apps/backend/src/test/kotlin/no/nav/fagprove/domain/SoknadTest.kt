@@ -23,16 +23,17 @@ class SoknadTest {
                 fnr = "12345678901",
                 erNorskBorger = true,
                 inntekter = createIncome(6),
-                stonadsperiode =
-                    Periode(
-                        fra = LocalDate.of(2025, 6, 1),
-                        til = LocalDate.of(2025, 12, 31),
-                    ),
+                termindato = LocalDate.of(2025, 6, 1),
+                rettsforhold = Rettsforhold.BEGGE_FORELDRE,
+                dekningsgrad = Dekningsgrad.HUNDRE_PROSENT,
+                antallBarn = 1,
+                oppgittAarsinntekt = Penger(360000),
                 innsendt = LocalDate.of(2025, 5, 15),
             )
         assertEquals("12345678901", soknad.fnr)
         assertEquals(true, soknad.erNorskBorger)
         assertEquals(6, soknad.inntekter.size)
+        assertEquals(Rettsforhold.BEGGE_FORELDRE, soknad.rettsforhold)
     }
 
     @Test
@@ -42,11 +43,11 @@ class SoknadTest {
                 fnr = "123",
                 erNorskBorger = true,
                 inntekter = emptyList(),
-                stonadsperiode =
-                    Periode(
-                        fra = LocalDate.of(2025, 6, 1),
-                        til = LocalDate.of(2025, 12, 31),
-                    ),
+                termindato = LocalDate.of(2025, 6, 1),
+                rettsforhold = Rettsforhold.BEGGE_FORELDRE,
+                dekningsgrad = Dekningsgrad.HUNDRE_PROSENT,
+                antallBarn = 1,
+                oppgittAarsinntekt = Penger(360000),
                 innsendt = LocalDate.of(2025, 5, 15),
             )
         }
@@ -59,13 +60,20 @@ class SoknadTest {
                 fnr = "1234567890a",
                 erNorskBorger = true,
                 inntekter = emptyList(),
-                stonadsperiode =
-                    Periode(
-                        fra = LocalDate.of(2025, 6, 1),
-                        til = LocalDate.of(2025, 12, 31),
-                    ),
+                termindato = LocalDate.of(2025, 6, 1),
+                rettsforhold = Rettsforhold.BEGGE_FORELDRE,
+                dekningsgrad = Dekningsgrad.HUNDRE_PROSENT,
+                antallBarn = 1,
+                oppgittAarsinntekt = Penger(360000),
                 innsendt = LocalDate.of(2025, 5, 15),
             )
+        }
+    }
+
+    @Test
+    fun `should reject zero children`() {
+        assertFailsWith<IllegalArgumentException> {
+            testSoknad(antallBarn = 0)
         }
     }
 }
