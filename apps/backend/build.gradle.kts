@@ -1,3 +1,6 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.gradle.api.file.DuplicatesStrategy
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktor)
@@ -10,6 +13,11 @@ version = "0.0.1"
 
 application {
     mainClass = "io.ktor.server.netty.EngineMain"
+}
+
+tasks.named<ShadowJar>("shadowJar") {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    mergeServiceFiles()
 }
 
 kotlin {
