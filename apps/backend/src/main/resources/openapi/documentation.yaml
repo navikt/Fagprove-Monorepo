@@ -41,10 +41,31 @@ paths:
                     examples:
                       - "Hello World!"
 
-  /api/foreldrepenger/soknader:
+  /isalive:
+    get:
+      operationId: getIsAlive
+      summary: Public liveness probe
+      responses:
+        "200":
+          description: Application process is alive
+
+  /isready:
+    get:
+      operationId: getIsReady
+      summary: Public readiness probe
+      description: Checks that the application can reach the database.
+      responses:
+        "200":
+          description: Application and database are ready
+        "503":
+          description: Database is unavailable
+
+  /api/v1/foreldrepenger/soknader:
     get:
       operationId: listForeldrepengerSoknader
       summary: List seeded foreldrepenger applications for demo processing
+      security:
+        - idporten: []
       responses:
         "200":
           description: Seeded applications suitable for frontend listing
@@ -54,16 +75,21 @@ paths:
                 $ref: "#/components/schemas/SoknadListeResponse"
         "500":
           $ref: "#/components/responses/InternalError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
-  /api/foreldrepenger/vedtak:
+  /api/v1/foreldrepenger/vedtak:
     post:
       operationId: startForeldrepengerBehandling
       summary: Start rule processing for a selected application
       description: >
         The request identifies a søknad by UUID. The response returns the numeric sak id
-        (behandling id) that must be used with `/api/foreldrepenger/saker/{id}`.
+        (behandling id) that must be used with `/api/v1/foreldrepenger/saker/{id}`.
         Automatic outcomes are finalized immediately. Manual-review outcomes are stored
         as an open case with regelspor and no final vedtak until a manual decision is saved.
+        Repeated calls for the same søknad are idempotent and return the existing case.
+      security:
+        - idporten: []
       requestBody:
         required: true
         content:
@@ -72,7 +98,13 @@ paths:
               $ref: "#/components/schemas/StartBehandlingRequest"
       responses:
         "201":
-          description: Processing started and the resulting case state
+          description: Processing started and the resulting case state was created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BehandlingResultatResponse"
+        "200":
+          description: Existing case for the søknad returned idempotently
           content:
             application/json:
               schema:
@@ -83,14 +115,18 @@ paths:
           $ref: "#/components/responses/NotFound"
         "415":
           $ref: "#/components/responses/UnsupportedMediaType"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/foreldrepenger/saker/{id}:
+  /api/v1/foreldrepenger/saker/{id}:
     get:
       operationId: getForeldrepengerSak
       summary: Get full case data by sak id
-      description: The path id is the numeric behandling/sak id returned by `POST /api/foreldrepenger/vedtak`.
+      description: The path id is the numeric behandling/sak id returned by `POST /api/v1/foreldrepenger/vedtak`.
+      security:
+        - idporten: []
       parameters:
         - $ref: "#/components/parameters/SakId"
       responses:
@@ -104,16 +140,20 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
 
-  /api/foreldrepenger/saker/{id}/beslutning:
+  /api/v1/foreldrepenger/saker/{id}/beslutning:
     post:
       operationId: decideForeldrepengerSak
       summary: Store a manual decision for a case awaiting manual review
       description: >
         Supports manual innvilgelse and avslag. The endpoint rejects cases that are
         already finalized or not awaiting manual decision.
+      security:
+        - idporten: []
       parameters:
         - $ref: "#/components/parameters/SakId"
       requestBody:
@@ -137,6 +177,8 @@ paths:
           $ref: "#/components/responses/Conflict"
         "415":
           $ref: "#/components/responses/UnsupportedMediaType"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -152,9 +194,12 @@ paths:
     get:
       operationId: getInternalIsReady
       summary: Internal readiness probe
+      description: Checks that the application can reach the database.
       responses:
         "200":
-          description: Application is ready to receive traffic
+          description: Application and database are ready
+        "503":
+          description: Database is unavailable
 
   /internal/metrics:
     get:
@@ -168,13 +213,45 @@ paths:
               schema:
                 type: string
 
+  /openapi:
+    get:
+      operationId: getSwaggerUi
+      summary: Swagger UI
+      responses:
+        "200":
+          description: Swagger UI for the API documentation
+
+  /openapi.json:
+    get:
+      operationId: getOpenApiDocument
+      summary: OpenAPI document
+      responses:
+        "200":
+          description: OpenAPI document served as YAML
+          content:
+            application/yaml:
+              schema:
+                type: string
+        "404":
+          description: OpenAPI document was not found
+
 components:
+  securitySchemes:
+    idporten:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        ID-porten JWT forwarded by Wonderwall. Foreldrepenger API routes require
+        this token when IDPORTEN_* configuration is present; local development
+        keeps auth disabled when ID-porten is not configured.
+
   parameters:
     SakId:
       name: id
       in: path
       required: true
-      description: Numeric behandling/sak id returned by `POST /api/foreldrepenger/vedtak`
+      description: Numeric behandling/sak id returned by `POST /api/v1/foreldrepenger/vedtak`
       schema:
         type: integer
         format: int64
@@ -579,6 +656,16 @@ components:
             title: Conflict
             status: 409
             detail: Saken venter ikke på manuell beslutning
+    Unauthorized:
+      description: Missing or invalid ID-porten JWT
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            title: Unauthorized
+            status: 401
+            detail: Token mangler eller er ugyldig
     UnsupportedMediaType:
       description: Request body must use JSON content type
       content:

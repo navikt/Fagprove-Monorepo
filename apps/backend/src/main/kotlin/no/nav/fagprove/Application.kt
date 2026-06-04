@@ -26,8 +26,11 @@ fun Application.module() {
     }
 
     configureHTTP()
-    configureAuthentication()
+    val enforceForeldrepengerAuth = configureAuthentication()
     configureSerialization()
     configureMonitoring()
-    configureRouting(database)
+    configureRouting(
+        database = database,
+        enforceForeldrepengerAuth = enforceForeldrepengerAuth,
+    )
 }

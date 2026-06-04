@@ -64,6 +64,11 @@ class BehandlingRepository(
         inRepositoryTransaction(database) {
             findBehandling(id)
         }
+
+    fun hentForSoknad(soknadId: UUID): Behandling? =
+        inRepositoryTransaction(database) {
+            findBehandlingForSoknad(soknadId)
+        }
 }
 
 internal fun insertBehandling(
@@ -99,6 +104,14 @@ internal fun findBehandling(id: Long): Behandling? =
     BehandlingTable
         .selectAll()
         .where { BehandlingTable.id eq behandlingEntityId(id) }
+        .firstOrNull()
+        ?.toBehandling()
+
+internal fun findBehandlingForSoknad(soknadId: UUID): Behandling? =
+    BehandlingTable
+        .selectAll()
+        .where { BehandlingTable.soknadId eq soknadId }
+        .orderBy(BehandlingTable.id to SortOrder.DESC)
         .firstOrNull()
         ?.toBehandling()
 

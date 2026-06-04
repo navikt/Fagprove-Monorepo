@@ -2,19 +2,20 @@ package no.nav.fagprove.routes
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.auth.authenticate
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import no.nav.fagprove.api.ApiConflictException
-import no.nav.fagprove.api.ApiNotFoundException
 import no.nav.fagprove.api.ApiValidationException
+import no.nav.fagprove.application.ForeldrepengerService
+import no.nav.fagprove.application.SakResult
+import no.nav.fagprove.application.StartBehandlingResult
 import no.nav.fagprove.domain.ManuellBeslutning
 import no.nav.fagprove.domain.RegelStatus
 import no.nav.fagprove.domain.Regelresultat
-import no.nav.fagprove.domain.Saksbehandling
 import no.nav.fagprove.domain.Soknad
 import no.nav.fagprove.domain.Vedtak
 import no.nav.fagprove.dto.BehandlingResultatResponse
@@ -34,124 +35,69 @@ import no.nav.fagprove.dto.StartBehandlingRequest
 import no.nav.fagprove.dto.StonadsperiodeDto
 import no.nav.fagprove.dto.VedtakDto
 import no.nav.fagprove.dto.VedtaksvariantDto
+import no.nav.fagprove.plugins.IDPORTEN_AUTH_PROVIDER
 import no.nav.fagprove.repository.Behandling
-import no.nav.fagprove.repository.BehandlingRepository
 import no.nav.fagprove.repository.BehandlingStatus
 import no.nav.fagprove.repository.LagretVedtak
-import no.nav.fagprove.repository.SoknadRepository
-import no.nav.fagprove.repository.VedtakRepository
 import java.util.UUID
 
 fun Route.foreldrepengerRoutes(
-    soknadRepository: SoknadRepository,
-    behandlingRepository: BehandlingRepository,
-    vedtakRepository: VedtakRepository,
+    service: ForeldrepengerService,
+    enforceAuth: Boolean,
 ) {
-    route("/api/foreldrepenger") {
-        get("/soknader") {
-            val response =
-                SoknadListeResponse(
-                    soknader = soknadRepository.hentAlle().map { it.toListeDto() },
+    if (enforceAuth) {
+        authenticate(IDPORTEN_AUTH_PROVIDER) {
+            foreldrepengerApiRoutes(service)
+        }
+    } else {
+        foreldrepengerApiRoutes(service)
+    }
+}
+
+private fun Route.foreldrepengerApiRoutes(service: ForeldrepengerService) {
+    listOf(
+        "/api/v1/foreldrepenger",
+        "/api/foreldrepenger",
+    ).forEach { basePath ->
+        route(basePath) {
+            get("/soknader") {
+                call.respond(
+                    SoknadListeResponse(
+                        soknader = service.listSoknader().map { it.toListeDto() },
+                    ),
                 )
-
-            call.respond(response)
-        }
-
-        post("/vedtak") {
-            val request = call.receive<StartBehandlingRequest>()
-            val soknadId = request.validertSoknadId()
-            val soknad =
-                soknadRepository.hent(soknadId)
-                    ?: throw ApiNotFoundException("Søknaden finnes ikke")
-
-            val resultat = Saksbehandling.behandle(soknad)
-            val behandling =
-                if (resultat.vedtak is Vedtak.ManuellVurdering) {
-                    behandlingRepository.opprett(
-                        soknadId = soknad.id,
-                        regelspor = resultat.regelspor,
-                    )
-                } else {
-                    behandlingRepository.opprettMedVedtak(
-                        soknadId = soknad.id,
-                        resultat = resultat,
-                        besluttetAv = AUTOMATISK_SAKSBEHANDLER,
-                    )
-                }
-
-            val lagretVedtak =
-                if (resultat.vedtak is Vedtak.ManuellVurdering) {
-                    null
-                } else {
-                    checkNotNull(vedtakRepository.hentForBehandling(behandling.id))
-                }
-
-            call.respond(
-                HttpStatusCode.Created,
-                behandling.toResultatResponse(
-                    lagretVedtak = lagretVedtak,
-                    manuellVurdering = resultat.vedtak as? Vedtak.ManuellVurdering,
-                ),
-            )
-        }
-
-        get("/saker/{id}") {
-            val sakId = call.sakId()
-            val behandling =
-                behandlingRepository.hent(sakId)
-                    ?: throw ApiNotFoundException("Saken finnes ikke")
-            val soknad =
-                soknadRepository.hent(behandling.soknadId)
-                    ?: throw ApiNotFoundException("Søknaden finnes ikke")
-
-            call.respond(
-                behandling.toSakResponse(
-                    soknad = soknad,
-                    lagretVedtak = vedtakRepository.hentForBehandling(sakId),
-                ),
-            )
-        }
-
-        post("/saker/{id}/beslutning") {
-            val sakId = call.sakId()
-            val request = call.receive<ManuellBeslutningRequest>()
-            val validertRequest = request.valider()
-
-            val behandling =
-                behandlingRepository.hent(sakId)
-                    ?: throw ApiNotFoundException("Saken finnes ikke")
-            val soknad =
-                soknadRepository.hent(behandling.soknadId)
-                    ?: throw ApiNotFoundException("Søknaden finnes ikke")
-
-            if (!behandling.venterPaaManuellBeslutning(vedtakRepository.hentForBehandling(sakId))) {
-                throw ApiConflictException("Saken venter ikke på manuell beslutning")
             }
 
-            val vedtak =
-                Saksbehandling.besluttManuelt(
-                    soknad = soknad,
-                    beslutning = validertRequest.type,
-                    begrunnelse = validertRequest.begrunnelse,
-                )
-            vedtakRepository.lagre(
-                behandlingId = sakId,
-                vedtak = vedtak,
-                besluttetAv = validertRequest.besluttetAv,
-            )
+            post("/vedtak") {
+                val request = call.receive<StartBehandlingRequest>()
+                val result = service.startBehandling(request.validertSoknadId())
 
-            val oppdatertBehandling = checkNotNull(behandlingRepository.hent(sakId))
-            call.respond(
-                oppdatertBehandling.toSakResponse(
-                    soknad = soknad,
-                    lagretVedtak = vedtakRepository.hentForBehandling(sakId),
-                ),
-            )
+                call.respond(
+                    if (result.created) HttpStatusCode.Created else HttpStatusCode.OK,
+                    result.toResultatResponse(),
+                )
+            }
+
+            get("/saker/{id}") {
+                call.respond(service.hentSak(call.sakId()).toSakResponse())
+            }
+
+            post("/saker/{id}/beslutning") {
+                val request = call.receive<ManuellBeslutningRequest>().valider()
+                val sak =
+                    service.besluttManuelt(
+                        sakId = call.sakId(),
+                        beslutning = request.type,
+                        begrunnelse = request.begrunnelse,
+                        besluttetAv = request.besluttetAv,
+                    )
+
+                call.respond(sak.toSakResponse())
+            }
         }
     }
 }
 
-private const val AUTOMATISK_SAKSBEHANDLER = "system"
 private const val MAKS_BEGRUNNELSE_TEGN = 1_000
 private const val MAKS_BESLUTTET_AV_TEGN = 100
 
@@ -243,11 +189,6 @@ private fun ApplicationCall.sakId(): Long {
     return sakId
 }
 
-private fun Behandling.venterPaaManuellBeslutning(lagretVedtak: LagretVedtak?): Boolean =
-    status == BehandlingStatus.OPPRETTET &&
-        lagretVedtak == null &&
-        regelspor.any { it.status == RegelStatus.MANUELL_VURDERING }
-
 private fun Soknad.toListeDto(): SoknadListeDto =
     SoknadListeDto(
         id = id.toString(),
@@ -283,6 +224,18 @@ private fun Soknad.toSaksdataDto(): SaksdataDto =
 
 private fun Soknad.syntetiskSokerIdent(): String = "TEST-${fnr.takeLast(4)}"
 
+private fun StartBehandlingResult.toResultatResponse(): BehandlingResultatResponse =
+    behandling.toResultatResponse(
+        lagretVedtak = lagretVedtak,
+        manuellVurdering = manuellVurdering,
+    )
+
+private fun SakResult.toSakResponse(): SakResponse =
+    behandling.toSakResponse(
+        soknad = soknad,
+        lagretVedtak = lagretVedtak,
+    )
+
 private fun Behandling.toResultatResponse(
     lagretVedtak: LagretVedtak?,
     manuellVurdering: Vedtak.ManuellVurdering?,
@@ -294,7 +247,7 @@ private fun Behandling.toResultatResponse(
         vedtaksvariant = lagretVedtak?.vedtak?.variantDto() ?: VedtaksvariantDto.MANUELL_VURDERING,
         regelspor = regelspor.map { it.toDto() },
         vedtak = lagretVedtak?.toDto(),
-        manuellVurdering = manuellVurdering?.toDto() ?: manuellVurderingFraRegelspor(),
+        manuellVurdering = if (lagretVedtak == null) manuellVurdering?.toDto() ?: manuellVurderingFraRegelspor() else null,
     )
 
 private fun Behandling.toSakResponse(

@@ -32,15 +32,17 @@ Serveren starter på `http://localhost:8080`.
 | GET | `/` | Helsesjekk |
 | GET | `/hello` | JSON-hilsen til frontend |
 | GET | `/isalive` | Liveness probe |
-| GET | `/isready` | Readiness probe |
-| GET | `/api/foreldrepenger/soknader` | Seedede testsøknader for demo/listing uten rått fødselsnummer |
-| POST | `/api/foreldrepenger/vedtak` | Starter behandling av valgt søknad og returnerer sak-id, status, regelspor og vedtak/manuell vurdering |
-| GET | `/api/foreldrepenger/saker/{id}` | Henter sak med søknadsdata, regelspor, status og vedtak/manuell vurdering. `{id}` er sak-/behandling-id fra `/vedtak` |
-| POST | `/api/foreldrepenger/saker/{id}/beslutning` | Lagrer manuell innvilgelse eller avslag for en sak som venter på manuell beslutning |
+| GET | `/isready` | Readiness probe som også sjekker database |
+| GET | `/api/v1/foreldrepenger/soknader` | Seedede testsøknader for demo/listing uten rått fødselsnummer |
+| POST | `/api/v1/foreldrepenger/vedtak` | Starter behandling av valgt søknad og returnerer sak-id, status, regelspor og vedtak/manuell vurdering. Gjentatte kall for samme søknad returnerer eksisterende sak idempotent |
+| GET | `/api/v1/foreldrepenger/saker/{id}` | Henter sak med søknadsdata, regelspor, status og vedtak/manuell vurdering. `{id}` er sak-/behandling-id fra `/vedtak` |
+| POST | `/api/v1/foreldrepenger/saker/{id}/beslutning` | Lagrer manuell innvilgelse eller avslag for en sak som venter på manuell beslutning |
 | GET | `/internal/isalive` | Intern liveness probe |
-| GET | `/internal/isready` | Intern readiness probe |
+| GET | `/internal/isready` | Intern readiness probe som også sjekker database |
 | GET | `/internal/metrics` | Prometheus-metrikker |
 | GET | `/openapi` | Swagger UI |
+
+De gamle `/api/foreldrepenger/*`-stiene er fortsatt tilgjengelige som bakoverkompatible aliaser. Når `IDPORTEN_ISSUER`, `IDPORTEN_JWKS_URI` og `IDPORTEN_AUDIENCE` er satt, krever foreldrepenger-API-et ID-porten JWT på både v1-stier og aliaser. Lokal utvikling uten IDPORTEN-konfigurasjon kjører fortsatt uten auth.
 
 ## Bygg og test
 

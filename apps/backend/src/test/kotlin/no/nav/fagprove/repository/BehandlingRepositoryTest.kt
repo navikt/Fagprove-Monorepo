@@ -42,6 +42,29 @@ class BehandlingRepositoryTest {
     }
 
     @Test
+    fun `henter behandling for soknad og avviser duplikat`() {
+        val database = repositoryTestDatabase()
+        val soknad = testSoknad()
+        SoknadRepository(database).lagre(soknad)
+        val repository = BehandlingRepository(database)
+        val behandling =
+            repository.opprett(
+                soknadId = soknad.id,
+                regelspor = testRegelspor(),
+                opprettetTidspunkt = LocalDateTime.of(2026, 6, 3, 10, 15, 0),
+            )
+
+        assertEquals(behandling, assertNotNull(repository.hentForSoknad(soknad.id)))
+        assertFailsWith<Exception> {
+            repository.opprett(
+                soknadId = soknad.id,
+                regelspor = testRegelspor(),
+                opprettetTidspunkt = LocalDateTime.of(2026, 6, 3, 10, 20, 0),
+            )
+        }
+    }
+
+    @Test
     fun `ruller tilbake behandling og regelspor naar vedtak ikke kan lagres`() {
         val database = repositoryTestDatabase()
         val soknad = testSoknad()
