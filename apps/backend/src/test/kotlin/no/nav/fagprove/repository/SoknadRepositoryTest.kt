@@ -37,6 +37,7 @@ class SoknadRepositoryTest {
             testSoknad(
                 inntekter = inntekter,
                 oppgittAarsinntekt = Penger(490_000),
+                beskrivelse = "Ekstern Digisis-testsøknad",
             )
 
         repository.lagre(soknad)

@@ -63,72 +63,67 @@ fun Route.foreldrepengerRoutes(
 }
 
 private fun Route.foreldrepengerApiRoutes(service: ForeldrepengerService) {
-    listOf(
-        "/api/v1/foreldrepenger",
-        "/api/foreldrepenger",
-    ).forEach { basePath ->
-        route(basePath) {
-            get("/soknader") {
-                call.respond(
-                    SoknadListeResponse(
-                        soknader = service.listSoknader().map { it.toListeDto() },
-                    ),
+    route("/api/v1/foreldrepenger") {
+        get("/soknader") {
+            call.respond(
+                SoknadListeResponse(
+                    soknader = service.listSoknader().map { it.toListeDto() },
+                ),
+            )
+        }
+
+        post("/vedtak") {
+            val request = call.receive<StartBehandlingRequest>()
+            val result = service.startBehandling(request.validertSoknadId())
+
+            call.respond(
+                if (result.created) HttpStatusCode.Created else HttpStatusCode.OK,
+                result.toResultatResponse(),
+            )
+        }
+
+        get("/saker/{id}") {
+            call.respond(service.hentSak(call.sakId()).toSakResponse())
+        }
+
+        get("/saker/{id}/intern-merknad") {
+            val sakId = call.sakId()
+            call.respond(service.hentInternMerknad(sakId).toInternMerknadResponse(sakId))
+        }
+
+        put("/saker/{id}/intern-merknad") {
+            val sakId = call.sakId()
+            val request = call.receive<InternMerknadRequest>().valider()
+            val merknad =
+                service.lagreInternMerknad(
+                    sakId = sakId,
+                    komplisert = request.komplisert,
+                    kommentar = request.kommentar,
+                    oppdatertAv = request.oppdatertAv,
                 )
-            }
 
-            post("/vedtak") {
-                val request = call.receive<StartBehandlingRequest>()
-                val result = service.startBehandling(request.validertSoknadId())
+            call.respond(merknad.toInternMerknadResponse())
+        }
 
-                call.respond(
-                    if (result.created) HttpStatusCode.Created else HttpStatusCode.OK,
-                    result.toResultatResponse(),
+        post("/saker/{id}/beslutning") {
+            val request = call.receive<ManuellBeslutningRequest>().valider()
+            val sak =
+                service.besluttManuelt(
+                    sakId = call.sakId(),
+                    beslutning = request.type,
+                    begrunnelse = request.begrunnelse,
+                    besluttetAv = request.besluttetAv,
                 )
-            }
 
-            get("/saker/{id}") {
-                call.respond(service.hentSak(call.sakId()).toSakResponse())
-            }
+            call.respond(sak.toSakResponse())
+        }
 
-            get("/saker/{id}/intern-merknad") {
-                val sakId = call.sakId()
-                call.respond(service.hentInternMerknad(sakId).toInternMerknadResponse(sakId))
-            }
-
-            put("/saker/{id}/intern-merknad") {
-                val sakId = call.sakId()
-                val request = call.receive<InternMerknadRequest>().valider()
-                val merknad =
-                    service.lagreInternMerknad(
-                        sakId = sakId,
-                        komplisert = request.komplisert,
-                        kommentar = request.kommentar,
-                        oppdatertAv = request.oppdatertAv,
-                    )
-
-                call.respond(merknad.toInternMerknadResponse())
-            }
-
-            post("/saker/{id}/beslutning") {
-                val request = call.receive<ManuellBeslutningRequest>().valider()
-                val sak =
-                    service.besluttManuelt(
-                        sakId = call.sakId(),
-                        beslutning = request.type,
-                        begrunnelse = request.begrunnelse,
-                        besluttetAv = request.besluttetAv,
-                    )
-
-                call.respond(sak.toSakResponse())
-            }
-
-            get("/interne-merknader") {
-                call.respond(
-                    InterneMerknaderResponse(
-                        saker = service.listInterneMerknader().map { it.toOversiktDto() },
-                    ),
-                )
-            }
+        get("/interne-merknader") {
+            call.respond(
+                InterneMerknaderResponse(
+                    saker = service.listInterneMerknader().map { it.toOversiktDto() },
+                ),
+            )
         }
     }
 }
@@ -298,6 +293,7 @@ private fun Soknad.toListeDto(): SoknadListeDto =
         dekningsgrad = dekningsgrad.name,
         antallBarn = antallBarn,
         oppgittAarsinntektKroner = oppgittAarsinntekt.kroner,
+        beskrivelse = beskrivelse,
     )
 
 private fun Soknad.toSaksdataDto(): SaksdataDto =

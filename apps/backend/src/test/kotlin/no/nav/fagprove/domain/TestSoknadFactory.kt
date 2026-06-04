@@ -22,6 +22,7 @@ internal fun testSoknad(
     antallBarn: Int = 1,
     oppgittAarsinntekt: Penger = Penger(600_000),
     innsendt: LocalDate = LocalDate.of(2026, 6, 15),
+    beskrivelse: String? = null,
 ) = Soknad(
     fnr = "12345678901",
     erNorskBorger = erNorskBorger,
@@ -32,6 +33,7 @@ internal fun testSoknad(
     antallBarn = antallBarn,
     oppgittAarsinntekt = oppgittAarsinntekt,
     innsendt = innsendt,
+    beskrivelse = beskrivelse,
 )
 
 internal fun seksTellendeInntekter(

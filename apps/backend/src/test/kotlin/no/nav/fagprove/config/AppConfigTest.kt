@@ -26,6 +26,8 @@ class AppConfigTest {
         assertEquals("app", config.database.user)
         assertEquals("secret", config.database.password)
         assertEquals("org.postgresql.Driver", config.database.driver)
+        assertEquals(AppConfig.DEFAULT_DIGISIS_SOKNAD_SOURCE_URL, config.digisisSoknadSourceUrl.toString())
+        assertTrue(config.syncExternalSoknader)
         assertFalse(config.seedTestSoknader)
     }
 
@@ -43,6 +45,7 @@ class AppConfigTest {
         assertIs<AppConfig.External>(config)
         assertEquals("jdbc:postgresql://postgres.local:5432/fagprove", config.database.url)
         assertEquals("app", config.database.user)
+        assertTrue(config.syncExternalSoknader)
         assertFalse(config.seedTestSoknader)
     }
 
@@ -59,6 +62,7 @@ class AppConfigTest {
         assertEquals("jdbc:postgresql://postgres.local:5432/fagprove?sslmode=require", config.database.url)
         assertEquals("app", config.database.user)
         assertEquals("secret", config.database.password)
+        assertTrue(config.syncExternalSoknader)
         assertFalse(config.seedTestSoknader)
     }
 
@@ -81,19 +85,30 @@ class AppConfigTest {
     }
 
     @Test
-    fun `resolve enables test soknad seed for local testcontainers`() {
+    fun `resolve syncs external soknader for local testcontainers`() {
         val config = AppConfig.resolve(mapOf("USE_TESTCONTAINERS" to "true"))
 
         assertIs<AppConfig.Testcontainers>(config)
+        assertTrue(config.syncExternalSoknader)
+        assertFalse(config.seedTestSoknader)
+    }
+
+    @Test
+    fun `resolve enables deterministic test soknad seed for in-memory tests`() {
+        val config = AppConfig.resolve(emptyMap())
+
+        assertIs<AppConfig.InMemory>(config)
+        assertFalse(config.syncExternalSoknader)
         assertTrue(config.seedTestSoknader)
     }
 
     @Test
-    fun `resolve enables test soknad seed for in-memory tests`() {
-        val config = AppConfig.resolve(emptyMap())
+    fun `resolve can enable external sync for in-memory without deterministic seed`() {
+        val config = AppConfig.resolve(mapOf("SYNC_EXTERNAL_SOKNADER" to "true"))
 
         assertIs<AppConfig.InMemory>(config)
-        assertTrue(config.seedTestSoknader)
+        assertTrue(config.syncExternalSoknader)
+        assertFalse(config.seedTestSoknader)
     }
 
     @Test
@@ -107,7 +122,52 @@ class AppConfigTest {
             )
 
         assertIs<AppConfig.Testcontainers>(config)
+        assertTrue(config.syncExternalSoknader)
         assertFalse(config.seedTestSoknader)
+    }
+
+    @Test
+    fun `resolve can use custom Digisis soknad source URL`() {
+        val config =
+            AppConfig.resolve(
+                mapOf(
+                    "DIGISIS_SOKNAD_SOURCE_URL" to "https://example.com/soknader",
+                ),
+            )
+
+        assertEquals("https://example.com/soknader", config.digisisSoknadSourceUrl.toString())
+    }
+
+    @Test
+    fun `resolve rejects invalid Digisis soknad source URL`() {
+        val error =
+            assertFailsWith<IllegalArgumentException> {
+                AppConfig.resolve(
+                    mapOf(
+                        "DIGISIS_SOKNAD_SOURCE_URL" to "ftp://example.com/soknader",
+                    ),
+                )
+            }
+
+        assertEquals("DIGISIS_SOKNAD_SOURCE_URL must use http:// or https://", error.message)
+    }
+
+    @Test
+    fun `resolve rejects combined external sync and deterministic seed`() {
+        val error =
+            assertFailsWith<IllegalArgumentException> {
+                AppConfig.resolve(
+                    mapOf(
+                        "SYNC_EXTERNAL_SOKNADER" to "true",
+                        "SEED_TEST_SOKNADER" to "true",
+                    ),
+                )
+            }
+
+        assertEquals(
+            "SYNC_EXTERNAL_SOKNADER=true cannot be combined with SEED_TEST_SOKNADER=true",
+            error.message,
+        )
     }
 
     @Test

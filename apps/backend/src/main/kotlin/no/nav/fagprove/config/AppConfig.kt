@@ -8,6 +8,8 @@ import java.net.URI
  */
 sealed class AppConfig {
     abstract val database: DatabaseConfig
+    abstract val digisisSoknadSourceUrl: URI
+    abstract val syncExternalSoknader: Boolean
     abstract val seedTestSoknader: Boolean
 
     data class DatabaseConfig(
@@ -19,72 +21,140 @@ sealed class AppConfig {
 
     data class Testcontainers(
         override val database: DatabaseConfig,
+        override val digisisSoknadSourceUrl: URI,
+        override val syncExternalSoknader: Boolean,
         override val seedTestSoknader: Boolean,
     ) : AppConfig()
 
     data class External(
         override val database: DatabaseConfig,
+        override val digisisSoknadSourceUrl: URI,
+        override val syncExternalSoknader: Boolean,
         override val seedTestSoknader: Boolean,
     ) : AppConfig()
 
     data class InMemory(
         override val database: DatabaseConfig,
+        override val digisisSoknadSourceUrl: URI,
+        override val syncExternalSoknader: Boolean,
         override val seedTestSoknader: Boolean,
     ) : AppConfig()
 
     companion object {
+        const val DEFAULT_DIGISIS_SOKNAD_SOURCE_URL = "https://api.digisis.org/api/foreldrepenger/soknader"
+
         private const val POSTGRES_DRIVER = "org.postgresql.Driver"
+        private const val DIGISIS_SOKNAD_SOURCE_URL = "DIGISIS_SOKNAD_SOURCE_URL"
+        private const val SYNC_EXTERNAL_SOKNADER = "SYNC_EXTERNAL_SOKNADER"
         private const val SEED_TEST_SOKNADER = "SEED_TEST_SOKNADER"
 
         fun resolve(env: Map<String, String> = System.getenv()): AppConfig {
             val useTestcontainers = env["USE_TESTCONTAINERS"] == "true"
             val postgresUrl = env.value("POSTGRES_URL")
             val naisDatabase = resolveNaisDatabase(env)
+            val digisisSoknadSourceUrl = env.digisisSoknadSourceUrl()
+            val syncExternalSoknader = env.booleanValue(SYNC_EXTERNAL_SOKNADER)
             val seedTestSoknader = env.booleanValue(SEED_TEST_SOKNADER)
 
             return when {
                 useTestcontainers ->
                     // URL/user/password set dynamically after container starts
-                    Testcontainers(
-                        DatabaseConfig(
-                            url = "",
-                            user = "",
-                            password = "",
-                            driver = POSTGRES_DRIVER,
-                        ),
-                        seedTestSoknader = seedTestSoknader ?: true,
+                    config(
+                        database =
+                            DatabaseConfig(
+                                url = "",
+                                user = "",
+                                password = "",
+                                driver = POSTGRES_DRIVER,
+                            ),
+                        digisisSoknadSourceUrl = digisisSoknadSourceUrl,
+                        syncExternalSoknader = syncExternalSoknader,
+                        seedTestSoknader = seedTestSoknader,
+                        defaultSyncExternalSoknader = true,
+                        defaultSeedTestSoknader = false,
+                        factory = ::Testcontainers,
                     )
                 naisDatabase != null -> {
-                    require(seedTestSoknader != true) {
-                        "$SEED_TEST_SOKNADER=true can only be used with in-memory or Testcontainers databases"
-                    }
-                    External(naisDatabase, seedTestSoknader = false)
+                    config(
+                        database = naisDatabase,
+                        digisisSoknadSourceUrl = digisisSoknadSourceUrl,
+                        syncExternalSoknader = syncExternalSoknader,
+                        seedTestSoknader = seedTestSoknader,
+                        defaultSyncExternalSoknader = true,
+                        defaultSeedTestSoknader = false,
+                        allowSeedTestSoknader = false,
+                        factory = ::External,
+                    )
                 }
                 postgresUrl != null -> {
-                    require(seedTestSoknader != true) {
-                        "$SEED_TEST_SOKNADER=true can only be used with in-memory or Testcontainers databases"
-                    }
-                    External(
-                        DatabaseConfig(
-                            url = postgresUrl,
-                            user = env.value("POSTGRES_USER") ?: "postgres",
-                            password = env["POSTGRES_PASSWORD"] ?: "",
-                            driver = POSTGRES_DRIVER,
-                        ),
-                        seedTestSoknader = false,
+                    config(
+                        database =
+                            DatabaseConfig(
+                                url = postgresUrl,
+                                user = env.value("POSTGRES_USER") ?: "postgres",
+                                password = env["POSTGRES_PASSWORD"] ?: "",
+                                driver = POSTGRES_DRIVER,
+                            ),
+                        digisisSoknadSourceUrl = digisisSoknadSourceUrl,
+                        syncExternalSoknader = syncExternalSoknader,
+                        seedTestSoknader = seedTestSoknader,
+                        defaultSyncExternalSoknader = true,
+                        defaultSeedTestSoknader = false,
+                        allowSeedTestSoknader = false,
+                        factory = ::External,
                     )
                 }
                 else ->
-                    InMemory(
-                        DatabaseConfig(
-                            url = "jdbc:h2:mem:test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
-                            user = "root",
-                            password = "",
-                            driver = "org.h2.Driver",
-                        ),
-                        seedTestSoknader = seedTestSoknader ?: true,
+                    config(
+                        database =
+                            DatabaseConfig(
+                                url = "jdbc:h2:mem:test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
+                                user = "root",
+                                password = "",
+                                driver = "org.h2.Driver",
+                            ),
+                        digisisSoknadSourceUrl = digisisSoknadSourceUrl,
+                        syncExternalSoknader = syncExternalSoknader,
+                        seedTestSoknader = seedTestSoknader,
+                        defaultSyncExternalSoknader = false,
+                        defaultSeedTestSoknader = true,
+                        factory = ::InMemory,
                     )
             }
+        }
+
+        private fun <T : AppConfig> config(
+            database: DatabaseConfig,
+            digisisSoknadSourceUrl: URI,
+            syncExternalSoknader: Boolean?,
+            seedTestSoknader: Boolean?,
+            defaultSyncExternalSoknader: Boolean,
+            defaultSeedTestSoknader: Boolean,
+            allowSeedTestSoknader: Boolean = true,
+            factory: (DatabaseConfig, URI, Boolean, Boolean) -> T,
+        ): T {
+            val resolvedSyncExternalSoknader = syncExternalSoknader ?: defaultSyncExternalSoknader
+            val resolvedSeedTestSoknader =
+                seedTestSoknader
+                    ?: if (resolvedSyncExternalSoknader) {
+                        false
+                    } else {
+                        defaultSeedTestSoknader
+                    }
+
+            require(allowSeedTestSoknader || !resolvedSeedTestSoknader) {
+                "$SEED_TEST_SOKNADER=true can only be used with in-memory or Testcontainers databases"
+            }
+            require(!(resolvedSyncExternalSoknader && resolvedSeedTestSoknader)) {
+                "$SYNC_EXTERNAL_SOKNADER=true cannot be combined with $SEED_TEST_SOKNADER=true"
+            }
+
+            return factory(
+                database,
+                digisisSoknadSourceUrl,
+                resolvedSyncExternalSoknader,
+                resolvedSeedTestSoknader,
+            )
         }
 
         private fun resolveNaisDatabase(env: Map<String, String>): DatabaseConfig? {
@@ -155,6 +225,18 @@ sealed class AppConfig {
         }
 
         private fun Map<String, String>.value(name: String): String? = this[name]?.takeIf { it.isNotBlank() }
+
+        private fun Map<String, String>.digisisSoknadSourceUrl(): URI {
+            val rawUrl = value(DIGISIS_SOKNAD_SOURCE_URL) ?: DEFAULT_DIGISIS_SOKNAD_SOURCE_URL
+            val uri = URI(rawUrl)
+            require(uri.scheme == "https" || uri.scheme == "http") {
+                "$DIGISIS_SOKNAD_SOURCE_URL must use http:// or https://"
+            }
+            require(!uri.host.isNullOrBlank()) {
+                "$DIGISIS_SOKNAD_SOURCE_URL must include a host"
+            }
+            return uri
+        }
 
         private fun Map<String, String>.booleanValue(name: String): Boolean? =
             value(name)?.let { rawValue ->

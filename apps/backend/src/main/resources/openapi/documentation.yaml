@@ -63,12 +63,12 @@ paths:
   /api/v1/foreldrepenger/soknader:
     get:
       operationId: listForeldrepengerSoknader
-      summary: List seeded foreldrepenger applications for demo processing
+      summary: List Digisis foreldrepenger applications for demo processing
       security:
         - idporten: []
       responses:
         "200":
-          description: Seeded applications suitable for frontend listing
+          description: Synced applications suitable for frontend listing
           content:
             application/json:
               schema:
@@ -393,6 +393,11 @@ components:
           type: integer
         oppgittAarsinntektKroner:
           type: integer
+        beskrivelse:
+          type:
+            - string
+            - "null"
+          description: Digisis scenario description for frontend presentation
 
     StartBehandlingRequest:
       type: object

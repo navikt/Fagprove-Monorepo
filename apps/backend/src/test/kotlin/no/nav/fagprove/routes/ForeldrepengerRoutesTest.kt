@@ -97,12 +97,11 @@ class ForeldrepengerRoutesTest {
         }
 
     @Test
-    fun `gammel api-sti er fortsatt tilgjengelig som kompatibilitetsalias`() =
+    fun `gammel api-sti er ikke tilgjengelig`() =
         testApp { client ->
             val response = client.get("$LEGACY_API_BASE/soknader")
 
-            assertEquals(HttpStatusCode.OK, response.status)
-            assertEquals(5, response.body<SoknadListeResponse>().soknader.size)
+            assertEquals(HttpStatusCode.NotFound, response.status)
         }
 
     @Test
@@ -115,7 +114,6 @@ class ForeldrepengerRoutesTest {
             assertEquals("Unauthorized", error.title)
             assertEquals(401, error.status)
             assertEquals("Token mangler eller er ugyldig", error.detail)
-            assertEquals(HttpStatusCode.Unauthorized, client.get("$LEGACY_API_BASE/soknader").status)
             assertEquals(HttpStatusCode.OK, client.get("/internal/isready").status)
         }
 
