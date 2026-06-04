@@ -6,6 +6,7 @@ import no.nav.fagprove.domain.Soknad
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -78,27 +79,35 @@ class SoknadRepository(
 
     fun hentAlle(): List<Soknad> =
         inRepositoryTransaction(database) {
-            SoknadTable
-                .selectAll()
-                .orderBy(
-                    SoknadTable.innsendt to SortOrder.ASC,
-                    SoknadTable.fnr to SortOrder.ASC,
-                ).map { it.toSoknad() }
+            val soknadRows =
+                SoknadTable
+                    .selectAll()
+                    .orderBy(
+                        SoknadTable.innsendt to SortOrder.ASC,
+                        SoknadTable.fnr to SortOrder.ASC,
+                    ).toList()
+            val inntekterBySoknadId =
+                findInntekterForSoknader(
+                    soknadRows.map { it[SoknadTable.id] },
+                )
+
+            soknadRows.map { row ->
+                row.toSoknad(
+                    inntekter = inntekterBySoknadId[row[SoknadTable.id]].orEmpty(),
+                )
+            }
         }
 
     private fun ResultRow.toSoknad(): Soknad {
         val soknadId = this[SoknadTable.id]
-        val inntekter =
-            InntektsregistreringTable
-                .selectAll()
-                .where { InntektsregistreringTable.soknadId eq soknadId }
-                .orderBy(
-                    InntektsregistreringTable.maned to SortOrder.ASC,
-                    InntektsregistreringTable.id to SortOrder.ASC,
-                ).map { it.toInntektsregistrering() }
+        return toSoknad(
+            inntekter = findInntekterForSoknad(soknadId),
+        )
+    }
 
-        return Soknad(
-            id = soknadId,
+    private fun ResultRow.toSoknad(inntekter: List<Inntektsregistrering>): Soknad =
+        Soknad(
+            id = this[SoknadTable.id],
             fnr = this[SoknadTable.fnr],
             erNorskBorger = this[SoknadTable.erNorskBorger],
             inntekter = inntekter,
@@ -109,6 +118,32 @@ class SoknadRepository(
             oppgittAarsinntekt = Penger(this[SoknadTable.oppgittAarsinntektKroner]),
             innsendt = this[SoknadTable.innsendt],
         )
+
+    private fun findInntekterForSoknad(soknadId: UUID): List<Inntektsregistrering> =
+        InntektsregistreringTable
+            .selectAll()
+            .where { InntektsregistreringTable.soknadId eq soknadId }
+            .orderBy(
+                InntektsregistreringTable.maned to SortOrder.ASC,
+                InntektsregistreringTable.id to SortOrder.ASC,
+            ).map { it.toInntektsregistrering() }
+
+    private fun findInntekterForSoknader(soknadIds: List<UUID>): Map<UUID, List<Inntektsregistrering>> {
+        if (soknadIds.isEmpty()) {
+            return emptyMap()
+        }
+
+        return InntektsregistreringTable
+            .selectAll()
+            .where { InntektsregistreringTable.soknadId inList soknadIds }
+            .orderBy(
+                InntektsregistreringTable.soknadId to SortOrder.ASC,
+                InntektsregistreringTable.maned to SortOrder.ASC,
+                InntektsregistreringTable.id to SortOrder.ASC,
+            ).groupBy(
+                keySelector = { it[InntektsregistreringTable.soknadId] },
+                valueTransform = { it.toInntektsregistrering() },
+            )
     }
 
     private fun ResultRow.toInntektsregistrering(): Inntektsregistrering =

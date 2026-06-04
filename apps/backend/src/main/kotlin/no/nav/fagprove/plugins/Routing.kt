@@ -11,14 +11,19 @@ import io.ktor.server.request.path
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.fagprove.api.ApiException
+import no.nav.fagprove.application.ForeldrepengerService
 import no.nav.fagprove.dto.ErrorResponse
 import no.nav.fagprove.repository.BehandlingRepository
 import no.nav.fagprove.repository.SoknadRepository
 import no.nav.fagprove.repository.VedtakRepository
 import no.nav.fagprove.routes.foreldrepengerRoutes
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
-fun Application.configureRouting(database: Database) {
+fun Application.configureRouting(
+    database: Database,
+    enforceForeldrepengerAuth: Boolean = false,
+) {
     install(StatusPages) {
         exception<ApiException> { call, cause ->
             call.respond(cause.statusCode, cause.toErrorResponse())
@@ -75,16 +80,38 @@ fun Application.configureRouting(database: Database) {
             call.respond(mapOf("message" to "Hello World!"))
         }
         get("/isalive") { call.respond(HttpStatusCode.OK) }
-        get("/isready") { call.respond(HttpStatusCode.OK) }
+        get("/isready") { call.respondReadiness(database) }
         route("/internal") {
             get("/isalive") { call.respond(HttpStatusCode.OK) }
-            get("/isready") { call.respond(HttpStatusCode.OK) }
+            get("/isready") { call.respondReadiness(database) }
         }
+        val soknadRepository = SoknadRepository(database)
+        val behandlingRepository = BehandlingRepository(database)
+        val vedtakRepository = VedtakRepository(database)
         foreldrepengerRoutes(
-            soknadRepository = SoknadRepository(database),
-            behandlingRepository = BehandlingRepository(database),
-            vedtakRepository = VedtakRepository(database),
+            service =
+                ForeldrepengerService(
+                    soknadRepository = soknadRepository,
+                    behandlingRepository = behandlingRepository,
+                    vedtakRepository = vedtakRepository,
+                ),
+            enforceAuth = enforceForeldrepengerAuth,
         )
+    }
+}
+
+private suspend fun ApplicationCall.respondReadiness(database: Database) {
+    try {
+        transaction(database) {
+            exec("SELECT 1")
+        }
+        respond(HttpStatusCode.OK)
+    } catch (cause: Exception) {
+        application.log.warn(
+            "Database readiness probe failed. exceptionType={}",
+            cause::class.qualifiedName,
+        )
+        respond(HttpStatusCode.ServiceUnavailable)
     }
 }
 

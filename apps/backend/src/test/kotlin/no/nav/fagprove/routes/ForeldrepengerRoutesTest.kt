@@ -25,6 +25,7 @@ import no.nav.fagprove.dto.SakStatusDto
 import no.nav.fagprove.dto.SoknadListeResponse
 import no.nav.fagprove.dto.StartBehandlingRequest
 import no.nav.fagprove.dto.VedtaksvariantDto
+import no.nav.fagprove.plugins.configureAuthentication
 import no.nav.fagprove.plugins.configureRouting
 import no.nav.fagprove.plugins.configureSerialization
 import no.nav.fagprove.repository.SoknadRepository
@@ -43,30 +44,41 @@ import kotlin.test.assertTrue
 class ForeldrepengerRoutesTest {
     private val serializer = Json { ignoreUnknownKeys = true }
 
-    private fun testApp(block: suspend ApplicationTestBuilder.(HttpClient) -> Unit) =
-        testApplication {
-            application {
-                val database = repositoryTestDatabase()
-                TestSoknadSeeder(SoknadRepository(database)).seed()
+    private fun testApp(
+        enforceAuth: Boolean = false,
+        block: suspend ApplicationTestBuilder.(HttpClient) -> Unit,
+    ) = testApplication {
+        application {
+            val database = repositoryTestDatabase()
+            TestSoknadSeeder(SoknadRepository(database)).seed()
 
-                configureSerialization()
-                configureRouting(database)
+            configureSerialization()
+            val authEnabled =
+                if (enforceAuth) {
+                    configureAuthentication(testIdPortenEnv())
+                } else {
+                    false
+                }
+            configureRouting(
+                database = database,
+                enforceForeldrepengerAuth = authEnabled,
+            )
+        }
+
+        val client =
+            createClient {
+                install(ContentNegotiation) {
+                    json(serializer)
+                }
             }
 
-            val client =
-                createClient {
-                    install(ContentNegotiation) {
-                        json(serializer)
-                    }
-                }
-
-            block(client)
-        }
+        block(client)
+    }
 
     @Test
     fun `lister seedede soknader uten full foedselsnummer`() =
         testApp { client ->
-            val response = client.get("/api/foreldrepenger/soknader")
+            val response = client.get("$API_BASE/soknader")
 
             assertEquals(HttpStatusCode.OK, response.status)
             val responseText = response.bodyAsText()
@@ -78,6 +90,29 @@ class ForeldrepengerRoutesTest {
             )
             assertEquals("TEST-0001", body.soknader.first().sokerIdent)
             assertFalse(responseText.contains("00000000001"))
+        }
+
+    @Test
+    fun `gammel api-sti er fortsatt tilgjengelig som kompatibilitetsalias`() =
+        testApp { client ->
+            val response = client.get("$LEGACY_API_BASE/soknader")
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals(5, response.body<SoknadListeResponse>().soknader.size)
+        }
+
+    @Test
+    fun `foreldrepenger api krever token naar ID-porten er konfigurert`() =
+        testApp(enforceAuth = true) { client ->
+            val response = client.get("$API_BASE/soknader")
+
+            assertEquals(HttpStatusCode.Unauthorized, response.status)
+            val error = response.errorBody()
+            assertEquals("Unauthorized", error.title)
+            assertEquals(401, error.status)
+            assertEquals("Token mangler eller er ugyldig", error.detail)
+            assertEquals(HttpStatusCode.Unauthorized, client.get("$LEGACY_API_BASE/soknader").status)
+            assertEquals(HttpStatusCode.OK, client.get("/internal/isready").status)
         }
 
     @Test
@@ -95,10 +130,28 @@ class ForeldrepengerRoutesTest {
         }
 
     @Test
+    fun `starter behandling idempotent for samme soknad`() =
+        testApp { client ->
+            val forste = client.startBehandling(TestSoknader.innvilgetId)
+            val replayResponse =
+                client.post("$API_BASE/vedtak") {
+                    contentType(ContentType.Application.Json)
+                    setBody(StartBehandlingRequest(TestSoknader.innvilgetId.toString()))
+                }
+
+            assertEquals(HttpStatusCode.OK, replayResponse.status)
+            val replay = replayResponse.body<BehandlingResultatResponse>()
+            assertEquals(forste.sakId, replay.sakId)
+            assertEquals(forste.soknadId, replay.soknadId)
+            assertEquals(forste.status, replay.status)
+            assertEquals(forste.vedtaksvariant, replay.vedtaksvariant)
+        }
+
+    @Test
     fun `avviser ugyldig soknad id med strukturert feil`() =
         testApp { client ->
             val response =
-                client.post("/api/foreldrepenger/vedtak") {
+                client.post("$API_BASE/vedtak") {
                     contentType(ContentType.Application.Json)
                     setBody("""{"soknadId":"ikke-en-uuid"}""")
                 }
@@ -115,7 +168,7 @@ class ForeldrepengerRoutesTest {
     fun `avviser ugyldig request body med trygg strukturert feil`() =
         testApp { client ->
             val response =
-                client.post("/api/foreldrepenger/vedtak") {
+                client.post("$API_BASE/vedtak") {
                     contentType(ContentType.Application.Json)
                     setBody("""{}""")
                 }
@@ -136,7 +189,7 @@ class ForeldrepengerRoutesTest {
         testApp { client ->
             val behandling = client.startBehandling(TestSoknader.innvilgetId)
 
-            val response = client.get("/api/foreldrepenger/saker/${behandling.sakId}")
+            val response = client.get("$API_BASE/saker/${behandling.sakId}")
 
             assertEquals(HttpStatusCode.OK, response.status)
             val sak = response.body<SakResponse>()
@@ -155,7 +208,7 @@ class ForeldrepengerRoutesTest {
     @Test
     fun `avviser ugyldig sak id med strukturert feil`() =
         testApp { client ->
-            val response = client.get("/api/foreldrepenger/saker/ikke-et-tall")
+            val response = client.get("$API_BASE/saker/ikke-et-tall")
 
             assertEquals(HttpStatusCode.BadRequest, response.status)
             val error = response.errorBody()
@@ -168,7 +221,7 @@ class ForeldrepengerRoutesTest {
     @Test
     fun `returnerer trygg strukturert 404 for manglende sak`() =
         testApp { client ->
-            val response = client.get("/api/foreldrepenger/saker/999999")
+            val response = client.get("$API_BASE/saker/999999")
 
             assertEquals(HttpStatusCode.NotFound, response.status)
             val responseText = response.bodyAsText()
@@ -204,7 +257,7 @@ class ForeldrepengerRoutesTest {
                 )
 
             val response =
-                client.post("/api/foreldrepenger/saker/${behandling.sakId}/beslutning") {
+                client.post("$API_BASE/saker/${behandling.sakId}/beslutning") {
                     contentType(ContentType.Application.Json)
                     setBody(request)
                 }
@@ -218,7 +271,7 @@ class ForeldrepengerRoutesTest {
             assertNull(sak.manuellVurdering)
 
             val duplicateResponse =
-                client.post("/api/foreldrepenger/saker/${behandling.sakId}/beslutning") {
+                client.post("$API_BASE/saker/${behandling.sakId}/beslutning") {
                     contentType(ContentType.Application.Json)
                     setBody(request)
                 }
@@ -241,7 +294,7 @@ class ForeldrepengerRoutesTest {
                 )
 
             val response =
-                client.post("/api/foreldrepenger/saker/${behandling.sakId}/beslutning") {
+                client.post("$API_BASE/saker/${behandling.sakId}/beslutning") {
                     contentType(ContentType.Application.Json)
                     setBody(request)
                 }
@@ -258,7 +311,7 @@ class ForeldrepengerRoutesTest {
 
             val sakEtterFeil =
                 client
-                    .get("/api/foreldrepenger/saker/${behandling.sakId}")
+                    .get("$API_BASE/saker/${behandling.sakId}")
                     .body<SakResponse>()
             assertEquals(SakStatusDto.TIL_MANUELL_VURDERING, sakEtterFeil.status)
             assertNull(sakEtterFeil.vedtak)
@@ -270,7 +323,7 @@ class ForeldrepengerRoutesTest {
         testApp { client ->
             val behandling = client.startBehandling(TestSoknader.manuellVurderingId)
             val response =
-                client.post("/api/foreldrepenger/saker/${behandling.sakId}/beslutning") {
+                client.post("$API_BASE/saker/${behandling.sakId}/beslutning") {
                     contentType(ContentType.Application.Json)
                     setBody("""{"type":"UGYLDIG","begrunnelse":"Kontrollert","besluttetAv":"Z990123"}""")
                 }
@@ -285,7 +338,7 @@ class ForeldrepengerRoutesTest {
 
             val sakEtterFeil =
                 client
-                    .get("/api/foreldrepenger/saker/${behandling.sakId}")
+                    .get("$API_BASE/saker/${behandling.sakId}")
                     .body<SakResponse>()
             assertEquals(SakStatusDto.TIL_MANUELL_VURDERING, sakEtterFeil.status)
             assertNull(sakEtterFeil.vedtak)
@@ -307,7 +360,7 @@ class ForeldrepengerRoutesTest {
 
     private suspend fun HttpClient.startBehandling(soknadId: UUID): BehandlingResultatResponse {
         val response =
-            post("/api/foreldrepenger/vedtak") {
+            post("$API_BASE/vedtak") {
                 contentType(ContentType.Application.Json)
                 setBody(StartBehandlingRequest(soknadId.toString()))
             }
@@ -317,4 +370,16 @@ class ForeldrepengerRoutesTest {
     }
 
     private suspend fun HttpResponse.errorBody(): ErrorResponse = serializer.decodeFromString(bodyAsText())
+
+    private companion object {
+        const val API_BASE = "/api/v1/foreldrepenger"
+        const val LEGACY_API_BASE = "/api/foreldrepenger"
+
+        fun testIdPortenEnv(): Map<String, String> =
+            mapOf(
+                "IDPORTEN_ISSUER" to "https://issuer.example",
+                "IDPORTEN_JWKS_URI" to "https://issuer.example/jwks.json",
+                "IDPORTEN_AUDIENCE" to "fagprove-backend",
+            )
+    }
 }

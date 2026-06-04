@@ -21,12 +21,14 @@ import java.util.concurrent.TimeUnit
  * - Vi verifiserer kun at token-en finnes og henter ut claims
  * - I lokal utvikling (ingen IDPORTEN_-variabler) er autentisering AVSLÅTT
  */
-fun Application.configureAuthentication(env: Map<String, String> = System.getenv()) {
+internal const val IDPORTEN_AUTH_PROVIDER = "idporten"
+
+fun Application.configureAuthentication(env: Map<String, String> = System.getenv()): Boolean {
     val config =
         resolveIdPortenConfig(env)
             ?: run {
                 log.warn("ID-porten not configured — authentication DISABLED (local dev mode)")
-                return
+                return false
             }
 
     val jwkProvider =
@@ -36,7 +38,7 @@ fun Application.configureAuthentication(env: Map<String, String> = System.getenv
             .build()
 
     install(Authentication) {
-        jwt("idporten") {
+        jwt(IDPORTEN_AUTH_PROVIDER) {
             verifier(jwkProvider, config.issuer) {
                 withAudience(config.audience)
             }
@@ -59,6 +61,8 @@ fun Application.configureAuthentication(env: Map<String, String> = System.getenv
             }
         }
     }
+
+    return true
 }
 
 internal data class IdPortenConfig(

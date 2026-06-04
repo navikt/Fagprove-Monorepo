@@ -44,7 +44,7 @@ internal object BehandlingTable : LongIdTable("behandling") {
     val ferdigstiltTidspunkt = datetime("ferdigstilt_tidspunkt").nullable()
 
     init {
-        index("idx_behandling_soknad_id", false, soknadId)
+        uniqueIndex("behandling_soknad_id_key", soknadId)
     }
 }
 
