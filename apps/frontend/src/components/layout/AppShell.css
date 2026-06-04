@@ -1,0 +1,77 @@
+.app-shell {
+  min-height: 100vh;
+  background: var(--a-bg-subtle, #f7f7f7);
+}
+
+.app-shell__main {
+  padding-block: var(--a-spacing-8, 2rem) var(--a-spacing-12, 3rem);
+}
+
+.skip-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  position: fixed;
+  z-index: 1000;
+  top: 1rem;
+  left: 1rem;
+  width: auto;
+  height: auto;
+  padding: 0.75rem 1rem;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  color: var(--a-text-default, #1f1f1f);
+  background: var(--a-bg-default, #ffffff);
+  border: 2px solid var(--a-border-focus, #00347d);
+  border-radius: 0.25rem;
+}
+
+.page-container {
+  width: 100%;
+}
+
+.section-card {
+  border: 1px solid var(--a-border-subtle, #c6c2bf);
+  border-radius: var(--a-border-radius-large, 0.5rem);
+  background: var(--a-bg-default, #ffffff);
+  box-shadow: var(--a-shadow-xsmall, 0 1px 2px rgb(0 0 0 / 5%));
+}
+
+.demo-view-toggle {
+  padding: var(--a-spacing-4, 1rem);
+  border: 1px solid var(--a-border-subtle, #c6c2bf);
+  border-radius: var(--a-border-radius-medium, 0.25rem);
+  background: var(--a-bg-default, #ffffff);
+}
+
+.demo-view-toggle__help {
+  color: var(--a-text-subtle, #4f4b48);
+}
+
+.empty-state {
+  border: 1px dashed var(--a-border-subtle, #c6c2bf);
+  border-radius: var(--a-border-radius-medium, 0.25rem);
+  background: var(--a-surface-subtle, #f7f7f7);
+}
+
+.flow-slot {
+  min-height: 100%;
+}
+
+@media (width < 768px) {
+  .app-shell__main {
+    padding-block: var(--a-spacing-6, 1.5rem) var(--a-spacing-8, 2rem);
+  }
+}

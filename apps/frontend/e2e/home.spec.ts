@@ -2,46 +2,23 @@ import { test, expect } from './fixtures';
 import AxeBuilder from '@axe-core/playwright';
 
 test('home page renders heading', async ({ page }) => {
-  await expect(page.getByRole('heading', { name: 'Velkommen' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Velg søknad' })).toBeVisible();
 });
 
-test('fetches greeting through the BFF route', async ({ page }) => {
-  await page.route('**/api/hello', async (route) => {
-    await route.fulfill({ json: { message: 'Hello from mocked BFF!' } });
-  });
+test('renders internal header and demo view toggle', async ({ page }) => {
+  await expect(page.getByRole('link', { name: 'Foreldrepenger' })).toBeVisible();
+  await expect(page.getByText('Kari Saksbehandler')).toBeVisible();
+  await expect(page.getByText('Avdeling foreldrepenger')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Hent hilsen' }).click();
-
-  await expect(page.getByTestId('hello-message')).toHaveText('Hello from mocked BFF!');
+  await expect(page.getByRole('radio', { name: 'Saksbehandler' })).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'Teamleder' })).toBeVisible();
+  await expect(page.getByText('Demovalg - ikke tilgangsstyring')).toBeVisible();
 });
 
-test('shows loading state while fetching', async ({ page }) => {
-  // Add a delay to the MSW handler so we can observe loading state
-  await page.route('**/api/hello', async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    await route.fulfill({ json: { message: 'Delayed response' } });
-  });
-
-  const button = page.getByRole('button', { name: 'Hent hilsen' });
-  await button.click();
-
-  await expect(page.locator('[aria-busy="true"]')).toBeVisible();
-
-  // Wait for success
-  await expect(page.getByTestId('hello-message')).toHaveText('Delayed response');
-  await expect(button).toBeEnabled();
-});
-
-test('shows error alert when API fails', async ({ page }) => {
-  await page.route('**/api/hello', (route) =>
-    route.fulfill({ status: 500, body: 'Internal Server Error' }),
-  );
-
-  await page.getByRole('button', { name: 'Hent hilsen' }).click();
-
-  const alert = page.getByRole('alert');
-  await expect(alert).toBeVisible();
-  await expect(alert).toContainText('Kunne ikke hente hilsen');
+test('renders empty søknad section for the next frontend step', async ({ page }) => {
+  await expect(page.getByRole('heading', { name: 'Mine søknader' })).toBeVisible();
+  await expect(page.getByText('Ingen søknader er lastet inn ennå')).toBeVisible();
+  await expect(page.getByText('/api/v1/foreldrepenger/soknader')).toBeVisible();
 });
 
 test('has no accessibility violations', async ({ page }) => {

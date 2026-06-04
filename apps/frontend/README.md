@@ -1,14 +1,13 @@
 # Fagprøve Frontend
 
-Astro SSR-app for fagprøve-monorepo-malen. Bruker React 19 og Nav Aksel designsystem for UI, med Nav-dekoratøren integrert via SSR.
+Astro SSR-app for foreldrepenger-saksbehandling. Bruker React 19 og Nav Aksel designsystem for en intern saksbehandlerflate.
 
 ## Stack
 
 - **Astro 6** (SSR, Node-adapter) — sideramme
 - **React 19** — interaktive komponenter
 - **@navikt/ds-react** — Nav Aksel designsystem
-- **@navikt/nav-dekoratoren-moduler** — Nav-header og footer
-- **MSW** — API-mocking i tester
+- **MSW** — API-mocking ved behov i tester og lokal demo
 - **Vitest + @testing-library/react** — enhetstester
 - **Playwright** — end-to-end-tester
 
@@ -43,26 +42,19 @@ pnpm format:check   # Prettier-sjekk
 
 Se [`.env.example`](../../.env.example) i rotmappen for alle tilgjengelige variabler.
 
-Browserkode skal kalle samme-origin `/api/*`-ruter. Astro-serveren bruker `BACKEND_URL` for å kalle backend internt.
+Browserkode skal kalle samme-origin `/api/*`-ruter når frontend trenger BFF-endepunkter. Astro-serveren bruker `BACKEND_URL` for å kalle backend internt. Backendens foreldrepenger-API ligger under `/api/v1/foreldrepenger/*`.
 
-## BFF-ruter
+## UI-struktur
 
-| Rute               | Backend-kall   | Bruk           |
-| ------------------ | -------------- | -------------- |
-| `GET /api/hello`   | `GET /hello`   | Demo-hilsen    |
-| `GET /api/cities`  | `GET /cities`  | Hent byer      |
-| `POST /api/cities` | `POST /cities` | Opprett by     |
-| `GET /api/users`   | `GET /users`   | Hent brukere   |
-| `POST /api/users`  | `POST /users`  | Opprett bruker |
+Forsiden bruker Aksel `InternalHeader`, en sentrert hovedcontainer og gjenbrukbare seksjonskort. `Velg søknad` er startpunktet for arbeidslisten, og `Mine søknader` er klar for API-kobling mot `/api/v1/foreldrepenger/soknader`.
 
 ## Prosjektstruktur
 
 ```
 src/
-├── api/          # Generert OpenAPI-klient og schema-typer
-├── components/   # React-komponenter (CityForm, UserForm, o.l.)
-├── layouts/      # BaseLayout med Nav-dekoratør
+├── components/   # React-komponenter og gjenbrukbar layout
+├── layouts/      # BaseLayout med intern saksbehandlershell
 ├── lib/          # Backend-klient og hjelpefunksjoner
-├── mocks/        # MSW-handlere for API-mocking i tester
+├── mocks/        # MSW-handlere for API-mocking ved behov
 └── pages/        # Astro-sider og API-ruter
 ```
