@@ -108,6 +108,7 @@ export interface KvoterDto {
 interface SeedPresentation {
   sakLabel: string;
   scenario: string;
+  applicantName?: string;
 }
 
 const seedPresentationById: Record<string, SeedPresentation> = {
@@ -125,7 +126,8 @@ const seedPresentationById: Record<string, SeedPresentation> = {
   },
   '00000000-0000-0000-0000-000000000204': {
     sakLabel: 'FP-004',
-    scenario: 'Manuell vurdering',
+    scenario: 'Manuell vurdering: stort avvik mellom snitt og årsinntekt',
+    applicantName: 'Elin Johansen',
   },
   '00000000-0000-0000-0000-000000000205': {
     sakLabel: 'FP-005',
@@ -253,6 +255,10 @@ export function getSakLabel(soknad: Pick<SoknadListeDto, 'id'>): string {
 
 export function getScenarioLabel(soknad: Pick<SoknadListeDto, 'id'>): string {
   return seedPresentationById[soknad.id]?.scenario ?? 'Testsøknad';
+}
+
+export function getApplicantLabel(soknad: Pick<SoknadListeDto, 'id' | 'sokerIdent'>): string {
+  return seedPresentationById[soknad.id]?.applicantName ?? soknad.sokerIdent;
 }
 
 export function getVedtaksvariantLabel(value: Vedtaksvariant): string {

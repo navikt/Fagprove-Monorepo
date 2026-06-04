@@ -33,13 +33,13 @@ export const seedSoknader: SoknadListeDto[] = [
   },
   {
     id: '00000000-0000-0000-0000-000000000204',
-    sokerIdent: 'TEST-0004',
-    innsendt: '2026-06-15',
-    termindato: '2026-08-01',
+    sokerIdent: 'TEST-4567',
+    innsendt: '2026-06-04',
+    termindato: '2026-08-10',
     rettsforhold: 'BEGGE_FORELDRE',
     dekningsgrad: 'HUNDRE_PROSENT',
     antallBarn: 1,
-    oppgittAarsinntektKroner: 400_000,
+    oppgittAarsinntektKroner: 600_000,
   },
   {
     id: '00000000-0000-0000-0000-000000000205',
@@ -58,12 +58,14 @@ export const seedSoknaderResponse: SoknadListeResponse = {
 };
 
 const standardInntekter = [
-  { maned: '2025-12', type: 'ARBEID', belopKroner: 50_000 },
   { maned: '2026-01', type: 'ARBEID', belopKroner: 50_000 },
-  { maned: '2026-02', type: 'SYKEPENGER', belopKroner: 50_000 },
+  { maned: '2026-02', type: 'ARBEID', belopKroner: 50_000 },
   { maned: '2026-03', type: 'ARBEID', belopKroner: 50_000 },
   { maned: '2026-04', type: 'ARBEID', belopKroner: 50_000 },
-  { maned: '2026-05', type: 'FORELDREPENGER', belopKroner: 50_000 },
+  { maned: '2026-05', type: 'ARBEID', belopKroner: 50_000 },
+  { maned: '2026-06', type: 'ARBEID', belopKroner: 20_000 },
+  { maned: '2026-07', type: 'ARBEID', belopKroner: 25_000 },
+  { maned: '2026-08', type: 'ARBEID', belopKroner: 22_000 },
 ];
 
 export const seedInnvilgetSakResponse: SakResponse = {
@@ -145,13 +147,13 @@ export const seedManuellVurderingSakResponse: SakResponse = {
     {
       regel: 'BEREGNINGSGRUNNLAG',
       status: 'MANUELL_VURDERING',
-      begrunnelse:
-        'Oppgitt årsinntekt 400000 kr avviker mer enn 25 % fra beregnet årsinntekt 600000 kr',
+      begrunnelse: 'Ikke fastsatt maskinelt',
     },
   ],
   vedtak: null,
   manuellVurdering: {
-    grunn: 'Oppgitt årsinntekt avviker fra beregnet inntekt og må vurderes manuelt',
+    grunn:
+      'For stort sprik mellom tre måneders snitt og oppgitt årsinntekt. Saksbehandler må vurdere grunnlaget.',
   },
 };
 
