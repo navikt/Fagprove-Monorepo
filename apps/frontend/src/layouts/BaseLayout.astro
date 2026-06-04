@@ -1,7 +1,6 @@
 ---
-import { fetchDecoratorHtml } from '@navikt/nav-dekoratoren-moduler/ssr';
 import '@navikt/ds-css';
-import { PageLayout } from '../components/PageLayout';
+import { AppShell } from '../components/layout/AppShell';
 import { MswProvider } from '../components/MswProvider';
 
 const mswEnabled = import.meta.env.PUBLIC_MSW_ENABLED === 'true';
@@ -12,51 +11,20 @@ interface Props {
 }
 
 const { title, language = 'nb' } = Astro.props;
-
-const decoratorEnv = (process.env.DECORATOR_ENV as 'dev' | 'prod') || 'dev';
-
-const decoratorFragments = await Promise.race([
-  fetchDecoratorHtml({
-    env: decoratorEnv,
-    params: {
-      context: 'privatperson',
-      language,
-    },
-  }),
-  new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error('Decorator fetch timeout')), 3000)
-  ),
-]).catch(() => ({
-  DECORATOR_HEAD_ASSETS: '',
-  DECORATOR_HEADER: '',
-  DECORATOR_FOOTER: '',
-  DECORATOR_SCRIPTS: '',
-}));
-
-const {
-  DECORATOR_HEAD_ASSETS,
-  DECORATOR_HEADER,
-  DECORATOR_FOOTER,
-  DECORATOR_SCRIPTS,
-} = decoratorFragments;
+const pageTitle = title === 'Foreldrepenger' ? title : `${title} - Foreldrepenger`;
 ---
 
 <html lang={language}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Fagprøve monorepo-mal med Astro, React og Nav Aksel designsystem." />
-    <title>{title}</title>
-    <Fragment set:html={DECORATOR_HEAD_ASSETS} />
+    <meta name="description" content="Intern saksbehandlerflate for foreldrepenger." />
+    <title>{pageTitle}</title>
   </head>
   <body>
-    <PageLayout
-      decoratorHeader={DECORATOR_HEADER}
-      decoratorFooter={DECORATOR_FOOTER}
-    >
+    <AppShell>
       <slot />
-    </PageLayout>
-    <Fragment set:html={DECORATOR_SCRIPTS} />
+    </AppShell>
     {mswEnabled && <MswProvider client:only="react" />}
   </body>
 </html>

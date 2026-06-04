@@ -13,8 +13,10 @@ export function MswProvider() {
       .then(() => {
         window.__mswReady__ = true;
       })
-      .catch(() => {
-        // msw not available in this environment
+      .catch((error: unknown) => {
+        if (import.meta.env.DEV) {
+          console.warn('Kunne ikke starte MSW i nettleseren', error);
+        }
       });
   }, []);
 

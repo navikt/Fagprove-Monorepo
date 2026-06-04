@@ -22,14 +22,14 @@ describe('backend-client', () => {
   });
 
   it('should fetch data from backend successfully', async () => {
-    const mockData = { message: 'Hello from Ktor backend!' };
+    const mockData = { soknader: [] };
     vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify(mockData), { status: 200 }));
 
-    const result = await fetchFromBackend('/hello');
+    const result = await fetchFromBackend('/api/v1/foreldrepenger/soknader');
 
     expect(result).toEqual(mockData);
     expect(fetch).toHaveBeenCalledWith(
-      'http://localhost:8080/hello',
+      'http://localhost:8080/api/v1/foreldrepenger/soknader',
       expect.objectContaining({
         headers: expect.objectContaining({
           'Content-Type': 'application/json',
@@ -67,7 +67,7 @@ describe('backend-client', () => {
       }),
     );
 
-    await expect(fetchFromBackend('/users')).rejects.toMatchObject({
+    await expect(fetchFromBackend('/api/v1/foreldrepenger/soknader')).rejects.toMatchObject({
       name: 'BackendError',
       status: 400,
       body: problem,
@@ -78,7 +78,7 @@ describe('backend-client', () => {
   it('should throw BackendError with status 503 when fetch fails', async () => {
     vi.mocked(fetch).mockRejectedValue(new Error('Connection refused'));
 
-    await expect(fetchFromBackend('/hello')).rejects.toMatchObject({
+    await expect(fetchFromBackend('/api/v1/foreldrepenger/soknader')).rejects.toMatchObject({
       name: 'BackendError',
       status: 503,
     });
@@ -87,24 +87,32 @@ describe('backend-client', () => {
   it('should throw BackendError when BACKEND_URL is not set', async () => {
     import.meta.env.BACKEND_URL = '';
 
-    await expect(fetchFromBackend('/hello')).rejects.toThrow('BACKEND_URL is not configured');
+    await expect(fetchFromBackend('/api/v1/foreldrepenger/soknader')).rejects.toThrow(
+      'BACKEND_URL is not configured',
+    );
   });
 
   it('should strip trailing slash from BACKEND_URL', async () => {
     import.meta.env.BACKEND_URL = 'http://localhost:8080/';
     vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({}), { status: 200 }));
 
-    await fetchFromBackend('/hello');
+    await fetchFromBackend('/api/v1/foreldrepenger/soknader');
 
-    expect(fetch).toHaveBeenCalledWith('http://localhost:8080/hello', expect.anything());
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:8080/api/v1/foreldrepenger/soknader',
+      expect.anything(),
+    );
   });
 
   it('should prefer runtime process env for deployed SSR', async () => {
     process.env.BACKEND_URL = 'http://nais-backend';
     vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({}), { status: 200 }));
 
-    await fetchFromBackend('/hello');
+    await fetchFromBackend('/api/v1/foreldrepenger/soknader');
 
-    expect(fetch).toHaveBeenCalledWith('http://nais-backend/hello', expect.anything());
+    expect(fetch).toHaveBeenCalledWith(
+      'http://nais-backend/api/v1/foreldrepenger/soknader',
+      expect.anything(),
+    );
   });
 });
