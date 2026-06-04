@@ -6,9 +6,7 @@ import {
   type ManuellBeslutningType,
   type SakResponse,
 } from '../../lib/foreldrepenger';
-
-const DEMO_BESLUTTET_AV = 'Kari Saksbehandler';
-const MAKS_BEGRUNNELSE_TEGN = 1_000;
+import { DEMO_BESLUTTET_AV, MAKS_BEGRUNNELSE_TEGN } from './manualDecision';
 
 interface ManuellBeslutningPanelProps {
   sak: SakResponse;
