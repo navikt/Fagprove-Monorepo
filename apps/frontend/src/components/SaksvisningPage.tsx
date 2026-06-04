@@ -216,7 +216,7 @@ function SaksdataPanel({ sak }: { sak: SakResponse }) {
           </div>
           <div>
             <dt>Innsendt</dt>
-            <dd>{soknad.innsendt}</dd>
+            <dd>{formatIsoDate(soknad.innsendt)}</dd>
           </div>
           <div>
             <dt>Termindato</dt>
