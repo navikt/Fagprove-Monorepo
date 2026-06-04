@@ -334,6 +334,15 @@ export function formatIsoDate(value: string): string {
   return `${match[3]}.${match[2]}.${match[1]}`;
 }
 
+export function formatIsoDateTime(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value);
+  if (!match) {
+    return value;
+  }
+
+  return `${match[3]}.${match[2]}.${match[1]} kl. ${match[4]}:${match[5]}`;
+}
+
 export function formatYearMonth(value: string): string {
   const match = /^(\d{4})-(\d{2})$/.exec(value);
   if (!match) {

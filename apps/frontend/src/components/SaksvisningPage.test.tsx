@@ -186,6 +186,9 @@ describe('SaksvisningPage', () => {
     expect(
       within(vedtakPanel).getByRole('row', { name: /Besluttet av Kari Saksbehandler/ }),
     ).toBeInTheDocument();
+    expect(
+      within(vedtakPanel).getByRole('row', { name: /Besluttet tidspunkt 15\.06\.2026 kl\. 10:05/ }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Innvilg manuelt' })).not.toBeInTheDocument();
     expect(screen.getByText('49 uker totalt')).toBeInTheDocument();
     await waitFor(() =>

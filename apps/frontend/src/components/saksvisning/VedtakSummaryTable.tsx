@@ -1,5 +1,10 @@
 import { Table } from '@navikt/ds-react';
-import { formatKroner, type SakResponse, type Vedtaksvariant } from '../../lib/foreldrepenger';
+import {
+  formatIsoDateTime,
+  formatKroner,
+  type SakResponse,
+  type Vedtaksvariant,
+} from '../../lib/foreldrepenger';
 import { formatUker, getOpptjeningStatus } from './helpers';
 
 interface VedtakSummaryTableProps {
@@ -26,7 +31,10 @@ export function VedtakSummaryTable({ sak, variant }: VedtakSummaryTableProps) {
           <VedtakRow label="Besluttet av" value={sak.vedtak.besluttetAv} />
         )}
         {sak.vedtak?.besluttetTidspunkt && (
-          <VedtakRow label="Besluttet tidspunkt" value={sak.vedtak.besluttetTidspunkt} />
+          <VedtakRow
+            label="Besluttet tidspunkt"
+            value={formatIsoDateTime(sak.vedtak.besluttetTidspunkt)}
+          />
         )}
       </Table.Body>
     </Table>
