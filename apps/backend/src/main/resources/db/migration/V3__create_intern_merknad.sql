@@ -10,3 +10,6 @@ CREATE TABLE IF NOT EXISTS intern_merknad (
         NOT komplisert OR btrim(kommentar) <> ''
     )
 );
+
+CREATE INDEX IF NOT EXISTS idx_intern_merknad_oppdatert_tidspunkt
+    ON intern_merknad (oppdatert_tidspunkt DESC);

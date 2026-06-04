@@ -91,6 +91,7 @@ internal object InternMerknadTable : LongIdTable("intern_merknad") {
 
     init {
         uniqueIndex("intern_merknad_behandling_id_key", behandlingId)
+        index("idx_intern_merknad_oppdatert_tidspunkt", false, oppdatertTidspunkt)
     }
 }
 
