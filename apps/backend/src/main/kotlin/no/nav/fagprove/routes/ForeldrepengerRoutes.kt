@@ -321,7 +321,7 @@ private fun Soknad.toSaksdataDto(): SaksdataDto =
             },
     )
 
-private fun Soknad.syntetiskSokerIdent(): String = "TEST-${fnr.takeLast(4)}"
+private fun Soknad.syntetiskSokerIdent(): String = fnr.syntetiskSokerIdent()
 
 private fun String.syntetiskSokerIdent(): String = "TEST-${takeLast(4)}"
 
