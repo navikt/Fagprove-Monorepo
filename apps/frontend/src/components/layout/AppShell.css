@@ -1,6 +1,6 @@
 .app-shell {
   min-height: 100vh;
-  background: var(--a-bg-subtle, #f7f7f7);
+  background: var(--a-bg-default, #ffffff);
 }
 
 .app-shell__main {
@@ -78,6 +78,180 @@
   min-width: 960px;
 }
 
+.case-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(22rem, 29rem);
+  gap: var(--a-spacing-6, 1.5rem);
+  align-items: start;
+}
+
+.case-view .aksel-tabs__tablist-wrapper {
+  margin-bottom: 0;
+}
+
+.case-header-card {
+  border: 1px solid var(--a-text-default, #1f1f1f);
+  border-radius: 0;
+  background: var(--a-bg-default, #ffffff);
+  box-shadow: none;
+}
+
+.case-header-card__avatar {
+  display: inline-flex;
+  width: 5rem;
+  height: 5rem;
+  flex: 0 0 5rem;
+  align-items: center;
+  justify-content: center;
+  color: var(--a-text-default, #1f1f1f);
+  background: var(--a-blue-50, #e6f0ff);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.case-header-card__avatar svg {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.case-header-card__content {
+  min-width: 0;
+}
+
+.case-rules-panel,
+.case-data-panel {
+  min-height: 100%;
+  border: 1px solid var(--a-text-default, #1f1f1f);
+  border-radius: 0;
+  background: var(--a-bg-default, #ffffff);
+  box-shadow: none;
+}
+
+.rule-timeline {
+  display: grid;
+  gap: 0;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.rule-timeline__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  gap: var(--a-spacing-4, 1rem);
+  padding-bottom: var(--a-spacing-7, 1.75rem);
+}
+
+.rule-timeline__item::before {
+  position: absolute;
+  top: 2.3rem;
+  bottom: -0.2rem;
+  left: 1.2rem;
+  width: 2px;
+  content: '';
+  background: var(--a-blue-500, #0067c5);
+}
+
+.rule-timeline__item:last-child {
+  padding-bottom: 0;
+}
+
+.rule-timeline__item:last-child::before {
+  display: none;
+}
+
+.rule-timeline__marker {
+  z-index: 1;
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--a-blue-500, #0067c5);
+  border-radius: 50%;
+  color: var(--a-text-on-action, #ffffff);
+  background: var(--a-blue-500, #0067c5);
+  font-weight: 700;
+}
+
+.rule-timeline__item[data-status='manuell_vurdering'] .rule-timeline__marker {
+  border-color: var(--a-orange-600, #c77300);
+  background: var(--a-orange-600, #c77300);
+}
+
+.rule-timeline__item[data-status='ikke_oppfylt'] .rule-timeline__marker {
+  border-color: var(--a-red-500, #c30000);
+  background: var(--a-red-500, #c30000);
+}
+
+.rule-timeline__status {
+  color: var(--a-blue-700, #0056b4);
+  font-weight: 600;
+}
+
+.case-data-list {
+  display: grid;
+  gap: var(--a-spacing-5, 1.25rem);
+  margin: 0;
+}
+
+.case-data-list div {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) minmax(0, 1.1fr);
+  gap: var(--a-spacing-4, 1rem);
+  align-items: baseline;
+}
+
+.case-data-list dt {
+  color: var(--a-text-subtle, #4f4b48);
+  font-weight: 600;
+}
+
+.case-data-list dd {
+  margin: 0;
+  font-size: 1.25rem;
+  text-align: right;
+}
+
+.case-manual-alert {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--a-spacing-4, 1rem);
+  align-items: start;
+  border: 1px solid var(--a-orange-600, #c77300);
+  border-radius: var(--a-border-radius-large, 0.5rem);
+  background: var(--a-orange-50, #fff4d6);
+}
+
+.case-manual-alert__icon {
+  color: var(--a-orange-700, #994b00);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.income-history-card {
+  border: 1px solid var(--a-border-default, #707070);
+  border-radius: var(--a-border-radius-large, 0.5rem);
+  background: var(--a-bg-default, #ffffff);
+}
+
+.income-history-card__chevron {
+  color: var(--a-text-default, #1f1f1f);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.income-table-wrapper {
+  overflow-x: auto;
+  border-top: 1px solid var(--a-border-subtle, #c6c2bf);
+}
+
+.income-table-wrapper table {
+  min-width: 0;
+  width: 100%;
+}
+
 .table-subtext {
   color: var(--a-text-subtle, #4f4b48);
 }
@@ -85,5 +259,14 @@
 @media (width < 768px) {
   .app-shell__main {
     padding-block: var(--a-spacing-6, 1.5rem) var(--a-spacing-8, 2rem);
+  }
+
+  .case-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .case-data-list div {
+    grid-template-columns: 1fr;
+    gap: var(--a-spacing-1, 0.25rem);
   }
 }

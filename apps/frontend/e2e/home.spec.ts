@@ -23,11 +23,15 @@ test('renders the application list', async ({ page }) => {
   await expect(page.getByText('Standard innvilgelse')).toBeVisible();
 });
 
-test('opens an application and navigates to the case placeholder', async ({ page }) => {
+test('opens an application and shows case details', async ({ page }) => {
   await page.getByRole('button', { name: 'Åpne sak' }).first().click();
 
   await expect(page).toHaveURL(/\/saker\/1001$/);
-  await expect(page.getByRole('heading', { name: 'Sak 1001' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'FP-001' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Regelspor' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Saksdata' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Opptjening' })).toBeVisible();
+  await expect(page.getByRole('table', { name: 'Inntektshistorikk' })).toBeVisible();
 });
 
 test('has no accessibility violations', async ({ page }) => {
