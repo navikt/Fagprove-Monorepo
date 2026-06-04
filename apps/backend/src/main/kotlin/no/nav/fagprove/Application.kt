@@ -20,10 +20,10 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    module(config = AppConfig.resolve())
+    configureApplication(config = AppConfig.resolve())
 }
 
-internal fun Application.module(
+internal fun Application.configureApplication(
     config: AppConfig,
     digisisSoknadClientFactory: (AppConfig) -> DigisisSoknadClient = {
         HttpDigisisSoknadClient(
