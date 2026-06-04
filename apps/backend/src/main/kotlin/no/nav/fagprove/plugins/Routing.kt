@@ -110,6 +110,7 @@ private suspend fun ApplicationCall.respondReadiness(database: Database) {
         application.log.warn(
             "Database readiness probe failed. exceptionType={}",
             cause::class.qualifiedName,
+            cause,
         )
         respond(HttpStatusCode.ServiceUnavailable)
     }
