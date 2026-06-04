@@ -247,7 +247,7 @@ private fun Behandling.toResultatResponse(
         vedtaksvariant = lagretVedtak?.vedtak?.variantDto() ?: VedtaksvariantDto.MANUELL_VURDERING,
         regelspor = regelspor.map { it.toDto() },
         vedtak = lagretVedtak?.toDto(),
-        manuellVurdering = manuellVurdering?.toDto() ?: manuellVurderingFraRegelspor(),
+        manuellVurdering = if (lagretVedtak == null) manuellVurdering?.toDto() ?: manuellVurderingFraRegelspor() else null,
     )
 
 private fun Behandling.toSakResponse(
