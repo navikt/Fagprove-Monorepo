@@ -7,7 +7,12 @@ import { SaksdataPanel } from './SaksdataPanel';
 import { VedtakPanel } from './VedtakPanel';
 import './Saksvisning.css';
 
-export function SaksvisningContent({ sak }: { sak: SakResponse }) {
+interface SaksvisningContentProps {
+  sak: SakResponse;
+  onSakChange: (sak: SakResponse) => void;
+}
+
+export function SaksvisningContent({ sak, onSakChange }: SaksvisningContentProps) {
   return (
     <VStack gap="space-24">
       <Link href="/">← Tilbake til søknader</Link>
@@ -46,7 +51,7 @@ export function SaksvisningContent({ sak }: { sak: SakResponse }) {
         <Tabs.Panel value="vedtak">
           <Box paddingBlock="space-24 0">
             <div className="decision-detail-grid">
-              <VedtakPanel sak={sak} />
+              <VedtakPanel sak={sak} onSakChange={onSakChange} />
               <Kvotevisualisering kvoter={sak.vedtak?.kvoter} />
             </div>
           </Box>

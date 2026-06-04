@@ -91,7 +91,7 @@ export function SaksvisningPage({ sakId }: SaksvisningPageProps) {
 
   return (
     <PageContainer>
-      <SaksvisningContent sak={sak} />
+      <SaksvisningContent sak={sak} onSakChange={setSak} />
     </PageContainer>
   );
 }

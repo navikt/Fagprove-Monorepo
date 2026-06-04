@@ -1,14 +1,4 @@
-import {
-  BodyShort,
-  Box,
-  Button,
-  Heading,
-  HStack,
-  LocalAlert,
-  Table,
-  Tag,
-  VStack,
-} from '@navikt/ds-react';
+import { BodyShort, Box, Heading, HStack, LocalAlert, Table, Tag, VStack } from '@navikt/ds-react';
 import { type KvoterDto } from '../../lib/foreldrepenger';
 import { formatUker } from './helpers';
 import { getKvoteSegments } from './kvoteSegments';
@@ -26,7 +16,7 @@ export function Kvotevisualisering({ kvoter }: { kvoter?: KvoterDto | null }) {
           Kvotevisualisering
         </Heading>
 
-        <LocalAlert status="info" as="div">
+        <LocalAlert status="info" role="note" as="div">
           <LocalAlert.Content>
             {kvoter
               ? 'Kvoteplanen vises som en Aksel-basert fordelingslinje med tabell som kontrollgrunnlag.'
@@ -99,15 +89,6 @@ export function Kvotevisualisering({ kvoter }: { kvoter?: KvoterDto | null }) {
             </Table>
           </>
         )}
-
-        <HStack gap="space-12" align="center" wrap>
-          <Button size="small" type="button">
-            ✓ Innvilg manuelt
-          </Button>
-          <Button size="small" type="button" variant="tertiary" data-color="danger">
-            ⊗ Avslå manuelt
-          </Button>
-        </HStack>
       </VStack>
     </Box>
   );

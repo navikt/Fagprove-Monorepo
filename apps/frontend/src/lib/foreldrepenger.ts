@@ -5,6 +5,7 @@ export const VEDTAK_API_PATH = '/api/v1/foreldrepenger/vedtak';
 export type SakStatus = 'OPPRETTET' | 'TIL_MANUELL_VURDERING' | 'FERDIGSTILT';
 export type Vedtaksvariant = 'INNVILGET' | 'AVSLAG' | 'ENGANGSSTONAD' | 'MANUELL_VURDERING';
 export type RegelStatus = 'OPPFYLT' | 'IKKE_OPPFYLT' | 'MANUELL_VURDERING';
+export type ManuellBeslutningType = 'INNVILGELSE' | 'AVSLAG';
 
 export interface SoknadListeResponse {
   soknader: SoknadListeDto[];
@@ -28,6 +29,12 @@ export interface SoknadListeDto {
 
 export interface StartBehandlingRequest {
   soknadId: string;
+}
+
+export interface ManuellBeslutningRequest {
+  type: ManuellBeslutningType;
+  begrunnelse: string;
+  besluttetAv: string;
 }
 
 export interface BehandlingResultatResponse {
@@ -224,8 +231,36 @@ export function sakApiPath(sakId: string | number): string {
   return `${SAKER_API_PATH}/${encodeURIComponent(String(sakId).trim())}`;
 }
 
+export function manuellBeslutningApiPath(sakId: string | number): string {
+  return `${sakApiPath(sakId)}/beslutning`;
+}
+
 export async function hentSak(sakId: string | number): Promise<SakResponse> {
   const response = await fetchJson<SakResponse>(sakApiPath(sakId));
+  if (
+    typeof response.sakId !== 'number' ||
+    typeof response.soknad?.id !== 'string' ||
+    !Array.isArray(response.regelspor)
+  ) {
+    throw new ApiClientError('Frontend-API-et returnerte en uventet sakrespons', 502);
+  }
+
+  return response;
+}
+
+export async function besluttManuelt(
+  sakId: string | number,
+  request: ManuellBeslutningRequest,
+): Promise<SakResponse> {
+  const response = await fetchJson<SakResponse>(manuellBeslutningApiPath(sakId), {
+    method: 'POST',
+    body: JSON.stringify({
+      type: request.type,
+      begrunnelse: request.begrunnelse.trim(),
+      besluttetAv: request.besluttetAv.trim(),
+    } satisfies ManuellBeslutningRequest),
+  });
+
   if (
     typeof response.sakId !== 'number' ||
     typeof response.soknad?.id !== 'string' ||

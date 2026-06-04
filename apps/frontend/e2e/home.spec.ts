@@ -44,6 +44,30 @@ test('opens an application and shows case details', async ({ page }) => {
   await expect(page.getByText('Mor: 15 uker')).toBeVisible();
 });
 
+test('submits a manual decision and shows final vedtak', async ({ page }) => {
+  await page
+    .getByRole('row', { name: /FP-004.*Manuell vurdering: stort avvik/ })
+    .getByRole('button', { name: 'Åpne sak' })
+    .click();
+
+  await expect(page).toHaveURL(/\/saker\/1004$/);
+  await page.getByRole('tab', { name: 'Vedtak' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Manuell behandling' })).toBeVisible();
+  await expect(
+    page.getByRole('note').filter({ hasText: 'Årsak til manuell vurdering' }),
+  ).toContainText(/For stort sprik mellom tre måneders snitt/);
+  await page
+    .getByLabel('Saksbehandlers begrunnelse')
+    .fill('Inntektsgrunnlaget er kontrollert manuelt.');
+  await page.getByRole('button', { name: 'Innvilg manuelt' }).click();
+
+  await expect(page.getByRole('row', { name: /Vedtaksvariant INNVILGET/ })).toBeVisible();
+  await expect(page.getByText('Inntektsgrunnlaget er kontrollert manuelt.')).toBeVisible();
+  await expect(page.getByRole('row', { name: /Besluttet av Kari Saksbehandler/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Innvilg manuelt' })).toHaveCount(0);
+});
+
 test('has no accessibility violations', async ({ page }) => {
   await expect(page.getByRole('columnheader', { name: 'Sak' })).toBeVisible();
 

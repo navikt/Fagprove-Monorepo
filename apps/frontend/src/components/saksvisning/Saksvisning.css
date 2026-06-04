@@ -54,6 +54,15 @@
   background: var(--a-orange-200, #ffd399);
 }
 
+.decision-heading:focus {
+  outline: 3px solid var(--a-border-focus, #00347d);
+  outline-offset: 3px;
+}
+
+.manual-decision-panel {
+  background: var(--a-surface-warning-subtle, #fff9e6);
+}
+
 @media (width < 768px) {
   .case-detail-grid,
   .decision-detail-grid {

@@ -1,4 +1,9 @@
-import type { SakResponse, SoknadListeDto, SoknadListeResponse } from '../lib/foreldrepenger';
+import type {
+  ManuellBeslutningType,
+  SakResponse,
+  SoknadListeDto,
+  SoknadListeResponse,
+} from '../lib/foreldrepenger';
 
 export const seedSoknader: SoknadListeDto[] = [
   {
@@ -221,6 +226,50 @@ export const seedManuellVurderingSakResponse: SakResponse = {
       'For stort sprik mellom tre måneders snitt og oppgitt årsinntekt. Saksbehandler må vurdere grunnlaget.',
   },
 };
+
+export function createManualDecisionSakResponse(
+  type: ManuellBeslutningType,
+  begrunnelse: string,
+  besluttetAv: string,
+): SakResponse {
+  const besluttetTidspunkt = '2026-06-15T10:05:00Z';
+  const vedtak =
+    type === 'INNVILGELSE'
+      ? {
+          variant: 'INNVILGET' as const,
+          begrunnelse,
+          belopKroner: seedManuellVurderingSakResponse.soknad.oppgittAarsinntektKroner,
+          stonadsperiode: {
+            fom: '2026-08-10',
+            tom: '2027-07-18',
+            uker: 49,
+          },
+          kvoter: {
+            modrekvoteUker: 15,
+            fedrekvoteUker: 15,
+            fellesperiodeUker: 16,
+            bonusuker: 0,
+            forskuddUker: 3,
+            totalUker: 49,
+          },
+          besluttetAv,
+          besluttetTidspunkt,
+        }
+      : {
+          variant: 'AVSLAG' as const,
+          begrunnelse,
+          besluttetAv,
+          besluttetTidspunkt,
+        };
+
+  return {
+    ...seedManuellVurderingSakResponse,
+    status: 'FERDIGSTILT',
+    ferdigstiltTidspunkt: besluttetTidspunkt,
+    vedtak,
+    manuellVurdering: null,
+  };
+}
 
 export const seedSakResponsesById: Record<string, SakResponse> = {
   '1001': seedInnvilgetSakResponse,
