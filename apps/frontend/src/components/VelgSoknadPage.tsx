@@ -84,7 +84,7 @@ function SoknadTable({
                 <Table.DataCell>{getScenarioLabel(soknad)}</Table.DataCell>
                 <Table.DataCell>
                   <BodyShort>
-                    {soknad.antallBarn} {soknad.antallBarn === 1 ? 'barn' : 'barn'}
+                    {soknad.antallBarn} barn
                   </BodyShort>
                   <BodyShort size="small" className="table-subtext">
                     Termin {formatIsoDate(soknad.termindato)}
