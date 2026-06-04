@@ -14,6 +14,7 @@ import no.nav.fagprove.api.ApiException
 import no.nav.fagprove.application.ForeldrepengerService
 import no.nav.fagprove.dto.ErrorResponse
 import no.nav.fagprove.repository.BehandlingRepository
+import no.nav.fagprove.repository.InternMerknadRepository
 import no.nav.fagprove.repository.SoknadRepository
 import no.nav.fagprove.repository.VedtakRepository
 import no.nav.fagprove.routes.foreldrepengerRoutes
@@ -88,12 +89,14 @@ fun Application.configureRouting(
         val soknadRepository = SoknadRepository(database)
         val behandlingRepository = BehandlingRepository(database)
         val vedtakRepository = VedtakRepository(database)
+        val internMerknadRepository = InternMerknadRepository(database)
         foreldrepengerRoutes(
             service =
                 ForeldrepengerService(
                     soknadRepository = soknadRepository,
                     behandlingRepository = behandlingRepository,
                     vedtakRepository = vedtakRepository,
+                    internMerknadRepository = internMerknadRepository,
                 ),
             enforceAuth = enforceForeldrepengerAuth,
         )

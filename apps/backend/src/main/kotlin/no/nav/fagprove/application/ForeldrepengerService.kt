@@ -10,6 +10,9 @@ import no.nav.fagprove.domain.Vedtak
 import no.nav.fagprove.repository.Behandling
 import no.nav.fagprove.repository.BehandlingRepository
 import no.nav.fagprove.repository.BehandlingStatus
+import no.nav.fagprove.repository.InternMerknad
+import no.nav.fagprove.repository.InternMerknadOppfolging
+import no.nav.fagprove.repository.InternMerknadRepository
 import no.nav.fagprove.repository.LagretVedtak
 import no.nav.fagprove.repository.SoknadRepository
 import no.nav.fagprove.repository.VedtakRepository
@@ -20,6 +23,7 @@ class ForeldrepengerService(
     private val soknadRepository: SoknadRepository,
     private val behandlingRepository: BehandlingRepository,
     private val vedtakRepository: VedtakRepository,
+    private val internMerknadRepository: InternMerknadRepository,
 ) {
     fun listSoknader(): List<Soknad> = soknadRepository.hentAlle()
 
@@ -28,9 +32,7 @@ class ForeldrepengerService(
             ?: opprettStartBehandling(soknadId)
 
     fun hentSak(sakId: Long): SakResult {
-        val behandling =
-            behandlingRepository.hent(sakId)
-                ?: throw ApiNotFoundException("Saken finnes ikke")
+        val behandling = krevBehandling(sakId)
         val soknad =
             soknadRepository.hent(behandling.soknadId)
                 ?: throw ApiNotFoundException("Søknaden finnes ikke")
@@ -42,15 +44,35 @@ class ForeldrepengerService(
         )
     }
 
+    fun hentInternMerknad(sakId: Long): InternMerknad? {
+        krevBehandling(sakId)
+        return internMerknadRepository.hentForBehandling(sakId)
+    }
+
+    fun lagreInternMerknad(
+        sakId: Long,
+        komplisert: Boolean,
+        kommentar: String,
+        oppdatertAv: String,
+    ): InternMerknad {
+        krevBehandling(sakId)
+        return internMerknadRepository.lagreEllerOppdater(
+            behandlingId = sakId,
+            komplisert = komplisert,
+            kommentar = kommentar,
+            oppdatertAv = oppdatertAv,
+        )
+    }
+
+    fun listInterneMerknader(): List<InternMerknadOppfolging> = internMerknadRepository.hentAlleMedInternOppfolging()
+
     fun besluttManuelt(
         sakId: Long,
         beslutning: ManuellBeslutning,
         begrunnelse: String,
         besluttetAv: String,
     ): SakResult {
-        val behandling =
-            behandlingRepository.hent(sakId)
-                ?: throw ApiNotFoundException("Saken finnes ikke")
+        val behandling = krevBehandling(sakId)
         val soknad =
             soknadRepository.hent(behandling.soknadId)
                 ?: throw ApiNotFoundException("Søknaden finnes ikke")
@@ -78,6 +100,10 @@ class ForeldrepengerService(
             lagretVedtak = vedtakRepository.hentForBehandling(sakId),
         )
     }
+
+    private fun krevBehandling(sakId: Long): Behandling =
+        behandlingRepository.hent(sakId)
+            ?: throw ApiNotFoundException("Saken finnes ikke")
 
     private fun eksisterendeStartBehandling(soknadId: UUID): StartBehandlingResult? =
         behandlingRepository.hentForSoknad(soknadId)?.let { behandling ->

@@ -4,6 +4,7 @@ import io.ktor.events.*
 import io.ktor.server.application.*
 import no.nav.fagprove.repository.BehandlingTable
 import no.nav.fagprove.repository.InntektsregistreringTable
+import no.nav.fagprove.repository.InternMerknadTable
 import no.nav.fagprove.repository.RegelresultatTable
 import no.nav.fagprove.repository.SoknadTable
 import no.nav.fagprove.repository.VedtakTable
@@ -62,6 +63,7 @@ object DatabaseFactory {
                 BehandlingTable,
                 RegelresultatTable,
                 VedtakTable,
+                InternMerknadTable,
             )
         }
         return database

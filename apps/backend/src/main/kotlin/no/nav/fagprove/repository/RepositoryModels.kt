@@ -27,7 +27,25 @@ data class LagretVedtak(
     val besluttetTidspunkt: LocalDateTime,
 )
 
-internal enum class VedtakType {
+data class InternMerknad(
+    val id: Long,
+    val behandlingId: Long,
+    val komplisert: Boolean,
+    val kommentar: String,
+    val oppdatertAv: String,
+    val oppdatertTidspunkt: LocalDateTime,
+)
+
+data class InternMerknadOppfolging(
+    val merknad: InternMerknad,
+    val soknadId: UUID,
+    val fnr: String,
+    val behandlingStatus: BehandlingStatus,
+    val vedtakType: VedtakType?,
+    val harManuellVurdering: Boolean,
+)
+
+enum class VedtakType {
     INNVILGET,
     AVSLAG,
     ENGANGSSTONAD,

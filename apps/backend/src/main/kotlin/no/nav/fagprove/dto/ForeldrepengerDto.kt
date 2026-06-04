@@ -48,6 +48,40 @@ data class SakResponse(
 )
 
 @Serializable
+data class InternMerknadRequest(
+    val komplisert: Boolean,
+    val kommentar: String? = null,
+    val oppdatertAv: String? = null,
+)
+
+@Serializable
+data class InternMerknadResponse(
+    val sakId: Long,
+    val komplisert: Boolean,
+    val kommentar: String,
+    val oppdatertAv: String?,
+    val oppdatertTidspunkt: String?,
+)
+
+@Serializable
+data class InterneMerknaderResponse(
+    val saker: List<InternMerknadOversiktDto>,
+)
+
+@Serializable
+data class InternMerknadOversiktDto(
+    val sakId: Long,
+    val saksnummer: String,
+    val sokerIdent: String,
+    val status: SakStatusDto,
+    val vedtaksvariant: VedtaksvariantDto,
+    val komplisert: Boolean,
+    val kommentar: String,
+    val oppdatertAv: String,
+    val oppdatertTidspunkt: String,
+)
+
+@Serializable
 data class SaksdataDto(
     val id: String,
     val sokerIdent: String,

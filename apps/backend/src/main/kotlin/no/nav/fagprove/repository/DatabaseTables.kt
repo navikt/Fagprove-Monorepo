@@ -5,6 +5,7 @@ import no.nav.fagprove.domain.InntektsType
 import no.nav.fagprove.domain.RegelStatus
 import no.nav.fagprove.domain.Regelnavn
 import no.nav.fagprove.domain.Rettsforhold
+import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.LongIdTable
@@ -79,6 +80,19 @@ internal object VedtakTable : Table("vedtak") {
     val besluttetTidspunkt = datetime("besluttet_tidspunkt")
 
     override val primaryKey = PrimaryKey(behandlingId)
+}
+
+internal object InternMerknadTable : LongIdTable("intern_merknad") {
+    val behandlingId = reference("behandling_id", BehandlingTable, onDelete = ReferenceOption.CASCADE)
+    val komplisert = bool("komplisert").default(false)
+    val kommentar = text("kommentar").default("")
+    val oppdatertAv = varchar("oppdatert_av", 100)
+    val oppdatertTidspunkt = datetime("oppdatert_tidspunkt")
+
+    init {
+        uniqueIndex("intern_merknad_behandling_id_key", behandlingId)
+        index("idx_intern_merknad_oppdatert_tidspunkt", false, oppdatertTidspunkt)
+    }
 }
 
 internal fun behandlingEntityId(id: Long): EntityID<Long> = EntityID(id, BehandlingTable)
