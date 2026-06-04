@@ -23,6 +23,7 @@ internal object SoknadTable : Table("soknad") {
     val antallBarn = integer("antall_barn")
     val oppgittAarsinntektKroner = integer("oppgitt_aarsinntekt_kroner")
     val innsendt = date("innsendt")
+    val beskrivelse = text("beskrivelse").nullable()
 
     override val primaryKey = PrimaryKey(id)
 }

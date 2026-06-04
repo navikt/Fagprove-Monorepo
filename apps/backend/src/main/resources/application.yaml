@@ -7,4 +7,5 @@ ktor:
 # Database config is read from environment variables:
 # POSTGRES_URL, POSTGRES_USER, POSTGRES_PASSWORD
 # Set USE_TESTCONTAINERS=true for local development
-# Set SEED_TEST_SOKNADER=false to disable deterministic local/test seed data
+# DIGISIS_SOKNAD_SOURCE_URL defaults to https://api.digisis.org/api/foreldrepenger/soknader
+# Set SYNC_EXTERNAL_SOKNADER=false and SEED_TEST_SOKNADER=true to use deterministic local/test seed data

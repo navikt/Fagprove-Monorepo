@@ -14,6 +14,7 @@ data class Soknad(
     val antallBarn: Int,
     val oppgittAarsinntekt: Penger,
     val innsendt: LocalDate,
+    val beskrivelse: String? = null,
 ) {
     init {
         require(fnr.length == 11) { "Fødselsnummer må være 11 siffer" }

@@ -1,0 +1,2 @@
+ALTER TABLE soknad
+    ADD COLUMN IF NOT EXISTS beskrivelse TEXT;

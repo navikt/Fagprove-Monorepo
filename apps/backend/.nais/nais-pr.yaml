@@ -21,6 +21,10 @@ spec:
   env:
     - name: TZ
       value: Europe/Oslo
+    - name: DIGISIS_SOKNAD_SOURCE_URL
+      value: https://api.digisis.org/api/foreldrepenger/soknader
+    - name: SYNC_EXTERNAL_SOKNADER
+      value: "true"
   resources:
     limits:
       memory: 512Mi
@@ -39,3 +43,6 @@ spec:
     inbound:
       rules:
         - application: fagprove-monorepo-frontend-pr-{{ pr_number }}
+    outbound:
+      external:
+        - host: api.digisis.org

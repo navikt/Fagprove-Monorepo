@@ -36,6 +36,7 @@ class SoknadRepository(
                     it[antallBarn] = soknad.antallBarn
                     it[oppgittAarsinntektKroner] = soknad.oppgittAarsinntekt.kroner
                     it[innsendt] = soknad.innsendt
+                    it[beskrivelse] = soknad.beskrivelse
                 }
             } else {
                 SoknadTable.insert {
@@ -48,6 +49,7 @@ class SoknadRepository(
                     it[antallBarn] = soknad.antallBarn
                     it[oppgittAarsinntektKroner] = soknad.oppgittAarsinntekt.kroner
                     it[innsendt] = soknad.innsendt
+                    it[beskrivelse] = soknad.beskrivelse
                 }
             }
 
@@ -117,6 +119,7 @@ class SoknadRepository(
             antallBarn = this[SoknadTable.antallBarn],
             oppgittAarsinntekt = Penger(this[SoknadTable.oppgittAarsinntektKroner]),
             innsendt = this[SoknadTable.innsendt],
+            beskrivelse = this[SoknadTable.beskrivelse],
         )
 
     private fun findInntekterForSoknad(soknadId: UUID): List<Inntektsregistrering> =

@@ -33,7 +33,7 @@ Serveren starter på `http://localhost:8080`.
 | GET | `/hello` | JSON-hilsen til frontend |
 | GET | `/isalive` | Liveness probe |
 | GET | `/isready` | Readiness probe som også sjekker database |
-| GET | `/api/v1/foreldrepenger/soknader` | Seedede testsøknader for demo/listing uten rått fødselsnummer |
+| GET | `/api/v1/foreldrepenger/soknader` | Digisis-testsøknader for demo/listing uten rått fødselsnummer |
 | POST | `/api/v1/foreldrepenger/vedtak` | Starter behandling av valgt søknad og returnerer sak-id, status, regelspor og vedtak/manuell vurdering. Gjentatte kall for samme søknad returnerer eksisterende sak idempotent |
 | GET | `/api/v1/foreldrepenger/saker/{id}` | Henter sak med søknadsdata, regelspor, status og vedtak/manuell vurdering. `{id}` er sak-/behandling-id fra `/vedtak` |
 | GET | `/api/v1/foreldrepenger/saker/{id}/intern-merknad` | Henter intern merknad for en sak, eller tom standardtilstand hvis ingen merknad er lagret |
@@ -45,7 +45,7 @@ Serveren starter på `http://localhost:8080`.
 | GET | `/internal/metrics` | Prometheus-metrikker |
 | GET | `/openapi` | Swagger UI |
 
-De gamle `/api/foreldrepenger/*`-stiene er fortsatt tilgjengelige som bakoverkompatible aliaser. Når `IDPORTEN_ISSUER`, `IDPORTEN_JWKS_URI` og `IDPORTEN_AUDIENCE` er satt, krever foreldrepenger-API-et ID-porten JWT på både v1-stier og aliaser. Lokal utvikling uten IDPORTEN-konfigurasjon kjører fortsatt uten auth.
+Foreldrepenger-API-et er kun tilgjengelig under `/api/v1/foreldrepenger/*`. Når `IDPORTEN_ISSUER`, `IDPORTEN_JWKS_URI` og `IDPORTEN_AUDIENCE` er satt, krever foreldrepenger-API-et ID-porten JWT. Lokal utvikling uten IDPORTEN-konfigurasjon kjører fortsatt uten auth.
 
 ## Bygg og test
 
@@ -70,4 +70,6 @@ Se [`.env.example`](../../.env.example) i rotmappen for alle tilgjengelige varia
 
 I Nais er backend intern og nås fra frontend via `BACKEND_URL`. Staging og prod bruker Cloud SQL-variabler med `envVarPrefix: DB`.
 
-Ved lokal Testcontainers- eller H2-oppstart seedes fem deterministiske testsøknader automatisk. Sett `SEED_TEST_SOKNADER=false` for å skru dette av. Eksterne databaser seedes ikke, og `SEED_TEST_SOKNADER=true` avvises for å unngå testdata i prod-lignende miljøer.
+Backend synkroniserer foreldrepenger-testsøknader fra Digisis ved oppstart for Testcontainers og eksterne databaser. Kilden styres med `DIGISIS_SOKNAD_SOURCE_URL` og har default `https://api.digisis.org/api/foreldrepenger/soknader`. Synken er idempotent, mapper Digisis-id til deterministisk UUID og returnerer kun syntetisk søkerident i API-responser.
+
+H2/in-memory oppstart bruker deterministiske lokale testsøknader som default for testbarhet. Sett `SYNC_EXTERNAL_SOKNADER=false` og `SEED_TEST_SOKNADER=true` for deterministisk lokal seed med Testcontainers. `SYNC_EXTERNAL_SOKNADER=true` kan ikke kombineres med `SEED_TEST_SOKNADER=true`, og `SEED_TEST_SOKNADER=true` avvises for eksterne databaser.

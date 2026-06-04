@@ -3,6 +3,9 @@ package no.nav.fagprove
 import io.ktor.server.application.*
 import no.nav.fagprove.config.AppConfig
 import no.nav.fagprove.config.DatabaseFactory
+import no.nav.fagprove.external.DigisisSoknadClient
+import no.nav.fagprove.external.DigisisSoknadSeeder
+import no.nav.fagprove.external.HttpDigisisSoknadClient
 import no.nav.fagprove.plugins.configureAuthentication
 import no.nav.fagprove.plugins.configureHTTP
 import no.nav.fagprove.plugins.configureMonitoring
@@ -17,12 +20,33 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    val config = AppConfig.resolve()
-    val database = DatabaseFactory.init(this, config)
+    module(config = AppConfig.resolve())
+}
 
-    if (config.seedTestSoknader) {
-        val seededeSoknader = TestSoknadSeeder(SoknadRepository(database)).seed()
-        log.info("Seedet ${seededeSoknader.size} deterministiske testsøknader")
+internal fun Application.module(
+    config: AppConfig,
+    digisisSoknadClientFactory: (AppConfig) -> DigisisSoknadClient = {
+        HttpDigisisSoknadClient(
+            it.digisisSoknadSourceUrl,
+        )
+    },
+) {
+    val database = DatabaseFactory.init(this, config)
+    val soknadRepository = SoknadRepository(database)
+
+    when {
+        config.syncExternalSoknader -> {
+            val synkroniserteSoknader =
+                DigisisSoknadSeeder(
+                    soknadRepository = soknadRepository,
+                    digisisSoknadClient = digisisSoknadClientFactory(config),
+                ).seed()
+            log.info("Synkroniserte ${synkroniserteSoknader.size} Digisis-testsøknader")
+        }
+        config.seedTestSoknader -> {
+            val seededeSoknader = TestSoknadSeeder(soknadRepository).seed()
+            log.info("Seedet ${seededeSoknader.size} deterministiske testsøknader")
+        }
     }
 
     configureHTTP()

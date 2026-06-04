@@ -17,6 +17,7 @@ data class SoknadListeDto(
     val dekningsgrad: String,
     val antallBarn: Int,
     val oppgittAarsinntektKroner: Int,
+    val beskrivelse: String? = null,
 )
 
 @Serializable
