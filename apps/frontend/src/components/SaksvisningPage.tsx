@@ -19,11 +19,13 @@ import { SectionCard } from './layout/SectionCard';
 import {
   ApiClientError,
   formatDekningsgrad,
+  formatInntektsType,
   formatIsoDate,
   formatKroner,
   formatRegelnavn,
   formatRegelStatus,
   formatRettsforhold,
+  formatYearMonth,
   getApplicantLabel,
   getSakLabel,
   getSakStatusLabel,
@@ -291,8 +293,8 @@ function InntektshistorikkTable({ inntekter }: { inntekter: InntektDto[] }) {
               <Table.Body>
                 {inntekter.map((inntekt) => (
                   <Table.Row key={`${inntekt.maned}-${inntekt.type}-${inntekt.belopKroner}`}>
-                    <Table.DataCell>{inntekt.maned}</Table.DataCell>
-                    <Table.DataCell>{inntekt.type}</Table.DataCell>
+                    <Table.DataCell>{formatYearMonth(inntekt.maned)}</Table.DataCell>
+                    <Table.DataCell>{formatInntektsType(inntekt.type)}</Table.DataCell>
                     <Table.DataCell align="right">
                       {formatKroner(inntekt.belopKroner)}
                     </Table.DataCell>

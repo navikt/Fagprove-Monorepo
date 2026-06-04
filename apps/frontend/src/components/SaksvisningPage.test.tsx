@@ -42,10 +42,10 @@ describe('SaksvisningPage', () => {
     const incomeTable = screen.getByRole('table', { name: 'Inntektshistorikk' });
     expect(within(incomeTable).getByRole('columnheader', { name: 'Måned' })).toBeInTheDocument();
     expect(
-      within(incomeTable).getByRole('row', { name: /2026-01 ARBEID 47\s*000 kr/ }),
+      within(incomeTable).getByRole('row', { name: /01\.2026 Arbeid 47\s*000 kr/ }),
     ).toBeInTheDocument();
     expect(
-      within(incomeTable).getByRole('row', { name: /2026-05 FORELDREPENGER 56\s*000 kr/ }),
+      within(incomeTable).getByRole('row', { name: /05\.2026 Foreldrepenger 56\s*000 kr/ }),
     ).toBeInTheDocument();
   });
 
