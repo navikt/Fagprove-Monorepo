@@ -37,8 +37,8 @@ describe('SaksvisningPage', () => {
     expect(screen.getByRole('heading', { name: 'Opptjening' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Beregningsgrunnlag' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Stønadsperiode' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Kvotefordeling' })).toBeInTheDocument();
-    expect(screen.getByText(/Beregningsgrunnlag er 648000 kr/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Kvote' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Regelspor' })).toHaveTextContent('648000 kr');
   });
 
   it('renders case data and income history', async () => {
@@ -57,6 +57,7 @@ describe('SaksvisningPage', () => {
     expect(screen.getByText('Oppgitt årsinntekt')).toBeInTheDocument();
     expect(within(saksdataPanel).getByText(/648\s*000 kr/)).toBeInTheDocument();
 
+    await userEvent.click(screen.getByRole('button', { name: /Inntektshistorikk/ }));
     const incomeTable = screen.getByRole('table', { name: 'Inntektshistorikk' });
     expect(within(incomeTable).getByRole('columnheader', { name: 'Måned' })).toBeInTheDocument();
     expect(
@@ -81,7 +82,7 @@ describe('SaksvisningPage', () => {
   it('renders manual decision controls only for cases awaiting manual decision', async () => {
     const { unmount } = render(<SaksvisningPage sakId="1001" />);
 
-    let vedtakPanel = await openVedtakTab();
+    const vedtakPanel = await openVedtakTab();
     expect(
       within(vedtakPanel).queryByRole('button', { name: 'Innvilg manuelt' }),
     ).not.toBeInTheDocument();
@@ -91,38 +92,31 @@ describe('SaksvisningPage', () => {
     unmount();
 
     render(<SaksvisningPage sakId="1004" />);
-    vedtakPanel = await openVedtakTab();
+    await openVedtakTab();
 
-    expect(
-      within(vedtakPanel).getByRole('button', { name: 'Innvilg manuelt' }),
-    ).toBeInTheDocument();
-    expect(within(vedtakPanel).getByRole('button', { name: 'Avslå manuelt' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Innvilg manuelt' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Avslå manuelt' })).toBeInTheDocument();
   });
 
-  it('shows manual reason and key rule information in the manual decision panel', async () => {
+  it('shows manual reason, key rule information and decision controls for manual case', async () => {
     render(<SaksvisningPage sakId="1004" />);
 
-    const vedtakPanel = await openVedtakTab();
+    expect(await screen.findByText('Ikke fastsatt maskinelt')).toBeInTheDocument();
 
-    expect(
-      within(vedtakPanel).getByRole('heading', { name: 'Manuell behandling' }),
-    ).toBeInTheDocument();
+    const vedtakPanel = await openVedtakTab();
+    const quotaPanel = screen
+      .getByRole('heading', { name: 'Kvotevisualisering' })
+      .closest('section');
+    if (!quotaPanel) {
+      throw new Error('Fant ikke kvotepanelet');
+    }
+
     expect(
       within(vedtakPanel).getAllByText(/For stort sprik mellom tre måneders snitt/).length,
     ).toBeGreaterThan(0);
-    expect(
-      within(vedtakPanel).getByRole('row', { name: /Oppgitt årsinntekt 600\s*000 kr/ }),
-    ).toBeInTheDocument();
-    expect(
-      within(vedtakPanel).getByRole('row', {
-        name: /Beregningsgrunnlag Ikke fastsatt maskinelt/,
-      }),
-    ).toBeInTheDocument();
-    expect(
-      within(vedtakPanel).getByRole('row', {
-        name: /Beregningsgrunnlag Manuell vurdering Ikke fastsatt maskinelt/,
-      }),
-    ).toBeInTheDocument();
+    expect(within(quotaPanel).getByLabelText('Saksbehandlers begrunnelse')).toBeInTheDocument();
+    expect(within(quotaPanel).getByRole('button', { name: 'Innvilg manuelt' })).toBeInTheDocument();
+    expect(within(quotaPanel).getByRole('button', { name: 'Avslå manuelt' })).toBeInTheDocument();
   });
 
   it('shows validation error when begrunnelse is missing', async () => {
@@ -195,7 +189,7 @@ describe('SaksvisningPage', () => {
     expect(screen.queryByRole('button', { name: 'Innvilg manuelt' })).not.toBeInTheDocument();
     expect(screen.getByText('49 uker totalt')).toBeInTheDocument();
     await waitFor(() =>
-      expect(screen.getByRole('heading', { name: 'Vedtak og beregning' })).toHaveFocus(),
+      expect(screen.getByRole('heading', { name: 'Kvotevisualisering' })).toHaveFocus(),
     );
   });
 

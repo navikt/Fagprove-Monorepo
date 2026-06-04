@@ -1,19 +1,13 @@
-import { useRef } from 'react';
-import { BodyLong, Box, Heading, HStack, Table, Tag, VStack } from '@navikt/ds-react';
+import { BodyLong, Box, Heading, HStack, Table, VStack } from '@navikt/ds-react';
 import { formatKroner, getVedtaksvariantLabel, type SakResponse } from '../../lib/foreldrepenger';
-import { formatUker, getManualReason, getOpptjeningStatus, getVedtaksTagVariant } from './helpers';
-import { ManuellBeslutningPanel } from './ManuellBeslutningPanel';
+import { formatUker, getManualReason, getOpptjeningStatus } from './helpers';
 
 interface VedtakPanelProps {
   sak: SakResponse;
-  onSakChange: (sak: SakResponse) => void;
 }
 
-export function VedtakPanel({ sak, onSakChange }: VedtakPanelProps) {
-  const headingRef = useRef<HTMLHeadingElement>(null);
+export function VedtakPanel({ sak }: VedtakPanelProps) {
   const manualReason = getManualReason(sak);
-  const shouldShowManualDecisionPanel =
-    sak.status === 'TIL_MANUELL_VURDERING' && Boolean(sak.manuellVurdering) && !sak.vedtak;
   const variant =
     sak.vedtak?.variant ??
     (sak.status === 'TIL_MANUELL_VURDERING' ? 'MANUELL_VURDERING' : undefined);
@@ -27,29 +21,18 @@ export function VedtakPanel({ sak, onSakChange }: VedtakPanelProps) {
     ? formatUker(sak.vedtak.stonadsperiode.uker)
     : '—';
 
-  function handleSakChange(updatedSak: SakResponse) {
-    onSakChange(updatedSak);
-    requestAnimationFrame(() => headingRef.current?.focus());
-  }
-
   return (
     <Box as="section" padding="space-24" borderWidth="1" borderRadius="0">
       <VStack gap="space-16">
         <HStack gap="space-12" align="center" wrap>
           <span aria-hidden="true">▦</span>
-          <Heading
-            level="2"
-            size="large"
-            ref={headingRef}
-            tabIndex={-1}
-            className="decision-heading"
-          >
+          <Heading level="2" size="large" className="decision-heading">
             Vedtak og beregning
           </Heading>
         </HStack>
-        <Tag size="medium" variant={getVedtaksTagVariant(variant)}>
+        <div className="decision-status-banner" data-variant={variant ?? 'IKKE_AVKLART'}>
           {variant ? getVedtaksvariantLabel(variant) : 'Ikke avklart'}
-        </Tag>
+        </div>
         <BodyLong>{begrunnelse}</BodyLong>
         {sak.status === 'TIL_MANUELL_VURDERING' && (
           <BodyLong>Saken må behandles manuelt før endelig vedtak kan fattes.</BodyLong>
@@ -70,10 +53,6 @@ export function VedtakPanel({ sak, onSakChange }: VedtakPanelProps) {
             )}
           </Table.Body>
         </Table>
-
-        {shouldShowManualDecisionPanel && (
-          <ManuellBeslutningPanel sak={sak} onDecisionSaved={handleSakChange} />
-        )}
       </VStack>
     </Box>
   );

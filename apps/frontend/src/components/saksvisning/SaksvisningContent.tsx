@@ -51,8 +51,8 @@ export function SaksvisningContent({ sak, onSakChange }: SaksvisningContentProps
         <Tabs.Panel value="vedtak">
           <Box paddingBlock="space-24 0">
             <div className="decision-detail-grid">
-              <VedtakPanel sak={sak} onSakChange={onSakChange} />
-              <Kvotevisualisering kvoter={sak.vedtak?.kvoter} />
+              <VedtakPanel sak={sak} />
+              <Kvotevisualisering kvoter={sak.vedtak?.kvoter} sak={sak} onSakChange={onSakChange} />
             </div>
           </Box>
         </Tabs.Panel>

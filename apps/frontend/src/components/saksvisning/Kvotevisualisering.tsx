@@ -1,18 +1,34 @@
+import { useRef } from 'react';
 import { BodyShort, Box, Heading, HStack, LocalAlert, Table, Tag, VStack } from '@navikt/ds-react';
-import { type KvoterDto } from '../../lib/foreldrepenger';
+import { type KvoterDto, type SakResponse } from '../../lib/foreldrepenger';
 import { formatUker } from './helpers';
 import { getKvoteSegments } from './kvoteSegments';
+import { ManuellBeslutningPanel } from './ManuellBeslutningPanel';
 
-export function Kvotevisualisering({ kvoter }: { kvoter?: KvoterDto | null }) {
+interface KvotevisualiseringProps {
+  kvoter?: KvoterDto | null;
+  sak: SakResponse;
+  onSakChange: (sak: SakResponse) => void;
+}
+
+export function Kvotevisualisering({ kvoter, sak, onSakChange }: KvotevisualiseringProps) {
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const segments = kvoter ? getKvoteSegments(kvoter).filter((segment) => segment.uker > 0) : [];
   const visualSegments = kvoter
     ? segments.filter((segment) => segment.uker > 0 && kvoter.totalUker > 0)
     : [];
+  const shouldShowManualDecisionPanel =
+    sak.status === 'TIL_MANUELL_VURDERING' && Boolean(sak.manuellVurdering) && !sak.vedtak;
+
+  function handleSakChange(updatedSak: SakResponse) {
+    onSakChange(updatedSak);
+    requestAnimationFrame(() => headingRef.current?.focus());
+  }
 
   return (
     <Box as="section" padding="space-24" borderWidth="1" borderRadius="0">
       <VStack gap="space-20">
-        <Heading level="2" size="large">
+        <Heading level="2" size="large" ref={headingRef} tabIndex={-1} className="decision-heading">
           Kvotevisualisering
         </Heading>
 
@@ -88,6 +104,10 @@ export function Kvotevisualisering({ kvoter }: { kvoter?: KvoterDto | null }) {
               </Table.Body>
             </Table>
           </>
+        )}
+
+        {shouldShowManualDecisionPanel && (
+          <ManuellBeslutningPanel sak={sak} onDecisionSaved={handleSakChange} />
         )}
       </VStack>
     </Box>

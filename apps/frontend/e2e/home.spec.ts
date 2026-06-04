@@ -33,7 +33,7 @@ test('opens an application and shows case details', async ({ page }) => {
   await expect(page.getByRole('tab', { name: 'Regelspor' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Saksdata' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Opptjening' })).toBeVisible();
-  await expect(page.getByRole('table', { name: 'Inntektshistorikk' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Inntektshistorikk/ })).toBeVisible();
 
   await page.getByRole('tab', { name: 'Vedtak' }).click();
 
@@ -53,10 +53,8 @@ test('submits a manual decision and shows final vedtak', async ({ page }) => {
   await expect(page).toHaveURL(/\/saker\/1004$/);
   await page.getByRole('tab', { name: 'Vedtak' }).click();
 
-  await expect(page.getByRole('heading', { name: 'Manuell behandling' })).toBeVisible();
-  await expect(
-    page.getByRole('note').filter({ hasText: 'Årsak til manuell vurdering' }),
-  ).toContainText(/For stort sprik mellom tre måneders snitt/);
+  await expect(page.getByText(/For stort sprik mellom tre måneders snitt/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Kvotevisualisering' })).toBeVisible();
   await page
     .getByLabel('Saksbehandlers begrunnelse')
     .fill('Inntektsgrunnlaget er kontrollert manuelt.');
