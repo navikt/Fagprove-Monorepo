@@ -114,7 +114,8 @@ interface SeedPresentation {
 const seedPresentationById: Record<string, SeedPresentation> = {
   '00000000-0000-0000-0000-000000000201': {
     sakLabel: 'FP-001',
-    scenario: 'Standard innvilgelse',
+    scenario: 'Standard innvilgelse: begge foreldre, ett barn, 100 %',
+    applicantName: 'Ingrid Hansen',
   },
   '00000000-0000-0000-0000-000000000202': {
     sakLabel: 'FP-002',

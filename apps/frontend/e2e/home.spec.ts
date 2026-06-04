@@ -20,18 +20,28 @@ test('renders the application list', async ({ page }) => {
   await expect(page.getByRole('columnheader', { name: 'Sak' })).toBeVisible();
   await expect(page.getByText('FP-001')).toBeVisible();
   await expect(page.getByText('TEST-0001')).toBeVisible();
-  await expect(page.getByText('Standard innvilgelse')).toBeVisible();
+  await expect(page.getByText(/Standard innvilgelse/)).toBeVisible();
 });
 
 test('opens an application and shows case details', async ({ page }) => {
   await page.getByRole('button', { name: 'Åpne sak' }).first().click();
 
   await expect(page).toHaveURL(/\/saker\/1001$/);
-  await expect(page.getByRole('heading', { level: 1, name: 'FP-001' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: /FP-001 · Ingrid Hansen/ }),
+  ).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Regelspor' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Saksdata' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Opptjening' })).toBeVisible();
   await expect(page.getByRole('table', { name: 'Inntektshistorikk' })).toBeVisible();
+
+  await page.getByRole('tab', { name: 'Vedtak' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Vedtak og beregning' })).toBeVisible();
+  await expect(page.getByRole('row', { name: /Beregningsgrunnlag 648\s*000 kr/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Kvotevisualisering' })).toBeVisible();
+  await expect(page.getByText('Forhånd: 3 uker')).toBeVisible();
+  await expect(page.getByText('Mor: 15 uker')).toBeVisible();
 });
 
 test('has no accessibility violations', async ({ page }) => {

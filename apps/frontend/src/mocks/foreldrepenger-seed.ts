@@ -120,10 +120,75 @@ export const seedInnvilgetSakResponse: SakResponse = {
       modrekvoteUker: 15,
       fedrekvoteUker: 15,
       fellesperiodeUker: 16,
-      bonusuker: 3,
-      forskuddUker: 0,
+      bonusuker: 0,
+      forskuddUker: 3,
       totalUker: 49,
     },
+  },
+  manuellVurdering: null,
+};
+
+export const seedAvslagSakResponse: SakResponse = {
+  sakId: 1002,
+  soknad: {
+    ...seedSoknader[1],
+    erNorskBorger: false,
+    inntekter: [
+      { maned: '2026-03', type: 'ARBEID', belopKroner: 42_000 },
+      { maned: '2026-04', type: 'ARBEID', belopKroner: 43_000 },
+    ],
+  },
+  status: 'FERDIGSTILT',
+  opprettetTidspunkt: '2026-06-15T10:02:00Z',
+  ferdigstiltTidspunkt: '2026-06-15T10:02:30Z',
+  regelspor: [
+    {
+      regel: 'OPPTJENING',
+      status: 'IKKE_OPPFYLT',
+      begrunnelse: 'Opptjeningskravet er ikke oppfylt med 2 registrerte inntektsmåneder',
+    },
+    {
+      regel: 'ENGANGSSTONAD',
+      status: 'IKKE_OPPFYLT',
+      begrunnelse: 'Opptjeningskravet er ikke oppfylt og søker er ikke norsk borger',
+    },
+  ],
+  vedtak: {
+    variant: 'AVSLAG',
+    begrunnelse: 'Opptjeningskravet er ikke oppfylt og søker er ikke norsk borger',
+  },
+  manuellVurdering: null,
+};
+
+export const seedEngangsstonadSakResponse: SakResponse = {
+  sakId: 1003,
+  soknad: {
+    ...seedSoknader[2],
+    erNorskBorger: true,
+    inntekter: [
+      { maned: '2026-03', type: 'ARBEID', belopKroner: 38_000 },
+      { maned: '2026-04', type: 'ARBEID', belopKroner: 39_000 },
+    ],
+  },
+  status: 'FERDIGSTILT',
+  opprettetTidspunkt: '2026-06-15T10:03:00Z',
+  ferdigstiltTidspunkt: '2026-06-15T10:03:30Z',
+  regelspor: [
+    {
+      regel: 'OPPTJENING',
+      status: 'IKKE_OPPFYLT',
+      begrunnelse: 'Opptjeningskravet er ikke oppfylt med 2 registrerte inntektsmåneder',
+    },
+    {
+      regel: 'ENGANGSSTONAD',
+      status: 'OPPFYLT',
+      begrunnelse: 'Søker får engangsstønad på 92648 kr',
+    },
+  ],
+  vedtak: {
+    variant: 'ENGANGSSTONAD',
+    begrunnelse: 'Opptjeningskravet er ikke oppfylt, men søker er norsk borger',
+    belopKroner: 92_648,
   },
   manuellVurdering: null,
 };
@@ -159,11 +224,15 @@ export const seedManuellVurderingSakResponse: SakResponse = {
 
 export const seedSakResponsesById: Record<string, SakResponse> = {
   '1001': seedInnvilgetSakResponse,
+  '1002': seedAvslagSakResponse,
+  '1003': seedEngangsstonadSakResponse,
   '1004': seedManuellVurderingSakResponse,
 };
 
 const seedSakIdBySoknadId: Record<string, number> = {
   [seedSoknader[0].id]: 1001,
+  [seedSoknader[1].id]: 1002,
+  [seedSoknader[2].id]: 1003,
   [seedSoknader[3].id]: 1004,
 };
 
