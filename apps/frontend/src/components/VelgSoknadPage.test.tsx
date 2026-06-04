@@ -18,7 +18,7 @@ describe('VelgSoknadPage', () => {
     expect(await screen.findByRole('columnheader', { name: 'Sak' })).toBeInTheDocument();
     expect(screen.getByText('FP-001')).toBeInTheDocument();
     expect(screen.getByText('TEST-0001')).toBeInTheDocument();
-    expect(screen.getByText('Standard innvilgelse')).toBeInTheDocument();
+    expect(screen.getByText(/Standard innvilgelse/)).toBeInTheDocument();
     expect(screen.queryByText('00000000001')).not.toBeInTheDocument();
   });
 

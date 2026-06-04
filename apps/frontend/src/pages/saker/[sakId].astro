@@ -1,10 +1,10 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { SakPlaceholderPage } from '../../components/SakPlaceholderPage';
+import { SaksvisningPage } from '../../components/SaksvisningPage';
 
 const { sakId } = Astro.params;
 ---
 
 <BaseLayout title={`Sak ${sakId ?? ''}`}>
-  <SakPlaceholderPage sakId={sakId ?? ''} />
+  <SaksvisningPage sakId={sakId ?? ''} client:load />
 </BaseLayout>

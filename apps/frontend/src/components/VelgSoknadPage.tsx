@@ -83,9 +83,7 @@ function SoknadTable({
                 <Table.DataCell>{formatIsoDate(soknad.innsendt)}</Table.DataCell>
                 <Table.DataCell>{getScenarioLabel(soknad)}</Table.DataCell>
                 <Table.DataCell>
-                  <BodyShort>
-                    {soknad.antallBarn} barn
-                  </BodyShort>
+                  <BodyShort>{soknad.antallBarn} barn</BodyShort>
                   <BodyShort size="small" className="table-subtext">
                     Termin {formatIsoDate(soknad.termindato)}
                   </BodyShort>

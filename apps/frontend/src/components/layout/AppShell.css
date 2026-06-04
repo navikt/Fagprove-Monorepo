@@ -1,6 +1,6 @@
 .app-shell {
   min-height: 100vh;
-  background: var(--a-bg-subtle, #f7f7f7);
+  background: var(--a-bg-default, #ffffff);
 }
 
 .app-shell__main {
