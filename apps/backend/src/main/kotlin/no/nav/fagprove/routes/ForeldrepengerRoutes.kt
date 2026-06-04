@@ -8,6 +8,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import no.nav.fagprove.api.ApiValidationException
 import no.nav.fagprove.application.ForeldrepengerService
@@ -21,6 +22,10 @@ import no.nav.fagprove.domain.Vedtak
 import no.nav.fagprove.dto.BehandlingResultatResponse
 import no.nav.fagprove.dto.FieldError
 import no.nav.fagprove.dto.InntektDto
+import no.nav.fagprove.dto.InternMerknadOversiktDto
+import no.nav.fagprove.dto.InternMerknadRequest
+import no.nav.fagprove.dto.InternMerknadResponse
+import no.nav.fagprove.dto.InterneMerknaderResponse
 import no.nav.fagprove.dto.KvoterDto
 import no.nav.fagprove.dto.ManuellBeslutningRequest
 import no.nav.fagprove.dto.ManuellBeslutningTypeDto
@@ -38,7 +43,10 @@ import no.nav.fagprove.dto.VedtaksvariantDto
 import no.nav.fagprove.plugins.IDPORTEN_AUTH_PROVIDER
 import no.nav.fagprove.repository.Behandling
 import no.nav.fagprove.repository.BehandlingStatus
+import no.nav.fagprove.repository.InternMerknad
+import no.nav.fagprove.repository.InternMerknadOppfolging
 import no.nav.fagprove.repository.LagretVedtak
+import no.nav.fagprove.repository.VedtakType
 import java.util.UUID
 
 fun Route.foreldrepengerRoutes(
@@ -82,6 +90,25 @@ private fun Route.foreldrepengerApiRoutes(service: ForeldrepengerService) {
                 call.respond(service.hentSak(call.sakId()).toSakResponse())
             }
 
+            get("/saker/{id}/intern-merknad") {
+                val sakId = call.sakId()
+                call.respond(service.hentInternMerknad(sakId).toInternMerknadResponse(sakId))
+            }
+
+            put("/saker/{id}/intern-merknad") {
+                val sakId = call.sakId()
+                val request = call.receive<InternMerknadRequest>().valider()
+                val merknad =
+                    service.lagreInternMerknad(
+                        sakId = sakId,
+                        komplisert = request.komplisert,
+                        kommentar = request.kommentar,
+                        oppdatertAv = request.oppdatertAv,
+                    )
+
+                call.respond(merknad.toInternMerknadResponse())
+            }
+
             post("/saker/{id}/beslutning") {
                 val request = call.receive<ManuellBeslutningRequest>().valider()
                 val sak =
@@ -94,17 +121,33 @@ private fun Route.foreldrepengerApiRoutes(service: ForeldrepengerService) {
 
                 call.respond(sak.toSakResponse())
             }
+
+            get("/interne-merknader") {
+                call.respond(
+                    InterneMerknaderResponse(
+                        saker = service.listInterneMerknader().map { it.toOversiktDto() },
+                    ),
+                )
+            }
         }
     }
 }
 
 private const val MAKS_BEGRUNNELSE_TEGN = 1_000
 private const val MAKS_BESLUTTET_AV_TEGN = 100
+private const val MAKS_INTERN_KOMMENTAR_TEGN = 1_000
+private const val MAKS_OPPDATERT_AV_TEGN = 100
 
 private data class ValidertManuellBeslutningRequest(
     val type: ManuellBeslutning,
     val begrunnelse: String,
     val besluttetAv: String,
+)
+
+private data class ValidertInternMerknadRequest(
+    val komplisert: Boolean,
+    val kommentar: String,
+    val oppdatertAv: String,
 )
 
 private fun StartBehandlingRequest.validertSoknadId(): UUID {
@@ -121,6 +164,62 @@ private fun StartBehandlingRequest.validertSoknadId(): UUID {
                     ),
             )
         }
+}
+
+private fun InternMerknadRequest.valider(): ValidertInternMerknadRequest {
+    val trimmedKommentar = kommentar?.trim()
+    val trimmedOppdatertAv = oppdatertAv?.trim()
+    val errors = mutableListOf<FieldError>()
+
+    if (trimmedKommentar == null) {
+        errors += FieldError(field = "kommentar", message = "kommentar må være med")
+    } else {
+        if (trimmedKommentar.length > MAKS_INTERN_KOMMENTAR_TEGN) {
+            errors +=
+                FieldError(
+                    field = "kommentar",
+                    message = "kommentar kan maksimalt være $MAKS_INTERN_KOMMENTAR_TEGN tegn",
+                )
+        }
+        if (trimmedKommentar.any(Character::isISOControl)) {
+            errors += FieldError(field = "kommentar", message = "kommentar kan ikke inneholde kontrolltegn")
+        }
+        if (komplisert && trimmedKommentar.isBlank()) {
+            errors +=
+                FieldError(
+                    field = "kommentar",
+                    message = "kommentar må fylles ut når saken markeres som komplisert",
+                )
+        }
+    }
+
+    if (trimmedOppdatertAv.isNullOrBlank()) {
+        errors += FieldError(field = "oppdatertAv", message = "oppdatertAv må fylles ut")
+    } else {
+        if (trimmedOppdatertAv.length > MAKS_OPPDATERT_AV_TEGN) {
+            errors +=
+                FieldError(
+                    field = "oppdatertAv",
+                    message = "oppdatertAv kan maksimalt være $MAKS_OPPDATERT_AV_TEGN tegn",
+                )
+        }
+        if (trimmedOppdatertAv.any(Character::isISOControl)) {
+            errors += FieldError(field = "oppdatertAv", message = "oppdatertAv kan ikke inneholde kontrolltegn")
+        }
+    }
+
+    if (errors.isNotEmpty()) {
+        throw ApiValidationException(
+            detail = "Intern merknad inneholder ugyldige verdier",
+            errors = errors,
+        )
+    }
+
+    return ValidertInternMerknadRequest(
+        komplisert = komplisert,
+        kommentar = checkNotNull(trimmedKommentar),
+        oppdatertAv = checkNotNull(trimmedOppdatertAv),
+    )
 }
 
 private fun ManuellBeslutningRequest.valider(): ValidertManuellBeslutningRequest {
@@ -224,6 +323,10 @@ private fun Soknad.toSaksdataDto(): SaksdataDto =
 
 private fun Soknad.syntetiskSokerIdent(): String = "TEST-${fnr.takeLast(4)}"
 
+private fun String.syntetiskSokerIdent(): String = "TEST-${takeLast(4)}"
+
+private fun Long.saksnummer(): String = "SAK-${toString().padStart(6, '0')}"
+
 private fun StartBehandlingResult.toResultatResponse(): BehandlingResultatResponse =
     behandling.toResultatResponse(
         lagretVedtak = lagretVedtak,
@@ -234,6 +337,38 @@ private fun SakResult.toSakResponse(): SakResponse =
     behandling.toSakResponse(
         soknad = soknad,
         lagretVedtak = lagretVedtak,
+    )
+
+private fun InternMerknad?.toInternMerknadResponse(sakId: Long): InternMerknadResponse =
+    this?.toInternMerknadResponse()
+        ?: InternMerknadResponse(
+            sakId = sakId,
+            komplisert = false,
+            kommentar = "",
+            oppdatertAv = null,
+            oppdatertTidspunkt = null,
+        )
+
+private fun InternMerknad.toInternMerknadResponse(): InternMerknadResponse =
+    InternMerknadResponse(
+        sakId = behandlingId,
+        komplisert = komplisert,
+        kommentar = kommentar,
+        oppdatertAv = oppdatertAv,
+        oppdatertTidspunkt = oppdatertTidspunkt.toString(),
+    )
+
+private fun InternMerknadOppfolging.toOversiktDto(): InternMerknadOversiktDto =
+    InternMerknadOversiktDto(
+        sakId = merknad.behandlingId,
+        saksnummer = merknad.behandlingId.saksnummer(),
+        sokerIdent = fnr.syntetiskSokerIdent(),
+        status = sakStatusDto(),
+        vedtaksvariant = vedtakType?.toDto() ?: VedtaksvariantDto.MANUELL_VURDERING,
+        komplisert = merknad.komplisert,
+        kommentar = merknad.kommentar,
+        oppdatertAv = merknad.oppdatertAv,
+        oppdatertTidspunkt = merknad.oppdatertTidspunkt.toString(),
     )
 
 private fun Behandling.toResultatResponse(
@@ -247,7 +382,14 @@ private fun Behandling.toResultatResponse(
         vedtaksvariant = lagretVedtak?.vedtak?.variantDto() ?: VedtaksvariantDto.MANUELL_VURDERING,
         regelspor = regelspor.map { it.toDto() },
         vedtak = lagretVedtak?.toDto(),
-        manuellVurdering = if (lagretVedtak == null) manuellVurdering?.toDto() ?: manuellVurderingFraRegelspor() else null,
+        manuellVurdering =
+            if (lagretVedtak ==
+                null
+            ) {
+                manuellVurdering?.toDto() ?: manuellVurderingFraRegelspor()
+            } else {
+                null
+            },
     )
 
 private fun Behandling.toSakResponse(
@@ -269,6 +411,13 @@ private fun Behandling.sakStatus(lagretVedtak: LagretVedtak?): SakStatusDto =
     when {
         lagretVedtak != null || status == BehandlingStatus.FERDIGSTILT -> SakStatusDto.FERDIGSTILT
         regelspor.any { it.status == RegelStatus.MANUELL_VURDERING } -> SakStatusDto.TIL_MANUELL_VURDERING
+        else -> SakStatusDto.OPPRETTET
+    }
+
+private fun InternMerknadOppfolging.sakStatusDto(): SakStatusDto =
+    when {
+        behandlingStatus == BehandlingStatus.FERDIGSTILT || vedtakType != null -> SakStatusDto.FERDIGSTILT
+        harManuellVurdering -> SakStatusDto.TIL_MANUELL_VURDERING
         else -> SakStatusDto.OPPRETTET
     }
 
@@ -344,4 +493,12 @@ private fun Vedtak.variantDto(): VedtaksvariantDto =
         is Vedtak.Avslag -> VedtaksvariantDto.AVSLAG
         is Vedtak.Engangsstonad -> VedtaksvariantDto.ENGANGSSTONAD
         is Vedtak.ManuellVurdering -> VedtaksvariantDto.MANUELL_VURDERING
+    }
+
+private fun VedtakType.toDto(): VedtaksvariantDto =
+    when (this) {
+        VedtakType.INNVILGET -> VedtaksvariantDto.INNVILGET
+        VedtakType.AVSLAG -> VedtaksvariantDto.AVSLAG
+        VedtakType.ENGANGSSTONAD -> VedtaksvariantDto.ENGANGSSTONAD
+        VedtakType.MANUELL_VURDERING -> VedtaksvariantDto.MANUELL_VURDERING
     }

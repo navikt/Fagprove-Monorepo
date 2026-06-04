@@ -145,6 +145,92 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  /api/v1/foreldrepenger/saker/{id}/intern-merknad:
+    get:
+      operationId: getForeldrepengerInternMerknad
+      summary: Get the internal note for a case
+      description: >
+        Returns internal-only follow-up metadata for a case. The note is separate
+        from ordinary case and decision data and must not be shared with mor,
+        medmor or far. If no note exists, the endpoint returns an empty default state.
+      security:
+        - idporten: []
+      parameters:
+        - $ref: "#/components/parameters/SakId"
+      responses:
+        "200":
+          description: Internal note state for the case
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternMerknadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      operationId: upsertForeldrepengerInternMerknad
+      summary: Save or update the internal note for a case
+      description: >
+        Marks whether a case is complicated or challenging and stores an internal
+        comment for internal follow-up, learning and best practice. Comments are
+        trimmed before storage. A non-empty comment is required when `komplisert`
+        is true.
+      security:
+        - idporten: []
+      parameters:
+        - $ref: "#/components/parameters/SakId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InternMerknadRequest"
+      responses:
+        "200":
+          description: Internal note saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternMerknadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/foreldrepenger/interne-merknader:
+    get:
+      operationId: listForeldrepengerInterneMerknader
+      summary: List cases with internal follow-up
+      description: >
+        Teamleder/avdelingsleder overview of cases marked for internal follow-up,
+        sorted by latest internal note update descending. Only internal follow-up
+        fields are returned; ordinary case responses remain unchanged.
+      security:
+        - idporten: []
+      responses:
+        "200":
+          description: Cases marked with internal follow-up
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterneMerknaderResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /api/v1/foreldrepenger/saker/{id}/beslutning:
     post:
       operationId: decideForeldrepengerSak
@@ -376,6 +462,104 @@ components:
           $ref: "#/components/schemas/Vedtak"
         manuellVurdering:
           $ref: "#/components/schemas/ManuellVurdering"
+
+    InternMerknadRequest:
+      type: object
+      required:
+        - komplisert
+        - kommentar
+        - oppdatertAv
+      properties:
+        komplisert:
+          type: boolean
+          description: Whether the case is marked as complicated or challenging
+        kommentar:
+          type: string
+          maxLength: 1000
+          description: >
+            Internal-only comment. Must be non-empty when `komplisert` is true
+            and must not contain control characters.
+        oppdatertAv:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Saksbehandler identifier for the latest update
+
+    InternMerknadResponse:
+      type: object
+      required:
+        - sakId
+        - komplisert
+        - kommentar
+        - oppdatertAv
+        - oppdatertTidspunkt
+      properties:
+        sakId:
+          type: integer
+          format: int64
+        komplisert:
+          type: boolean
+        kommentar:
+          type: string
+        oppdatertAv:
+          type:
+            - string
+            - "null"
+        oppdatertTidspunkt:
+          type:
+            - string
+            - "null"
+          format: date-time
+
+    InterneMerknaderResponse:
+      type: object
+      required:
+        - saker
+      properties:
+        saker:
+          type: array
+          items:
+            $ref: "#/components/schemas/InternMerknadOversikt"
+
+    InternMerknadOversikt:
+      type: object
+      required:
+        - sakId
+        - saksnummer
+        - sokerIdent
+        - status
+        - vedtaksvariant
+        - komplisert
+        - kommentar
+        - oppdatertAv
+        - oppdatertTidspunkt
+      properties:
+        sakId:
+          type: integer
+          format: int64
+        saksnummer:
+          type: string
+          description: Display case number derived for the demo
+          examples:
+            - SAK-000001
+        sokerIdent:
+          type: string
+          description: Synthetic display identifier for demo use, not raw fnr
+          examples:
+            - TEST-0001
+        status:
+          $ref: "#/components/schemas/SakStatus"
+        vedtaksvariant:
+          $ref: "#/components/schemas/Vedtaksvariant"
+        komplisert:
+          type: boolean
+        kommentar:
+          type: string
+        oppdatertAv:
+          type: string
+        oppdatertTidspunkt:
+          type: string
+          format: date-time
 
     Saksdata:
       type: object

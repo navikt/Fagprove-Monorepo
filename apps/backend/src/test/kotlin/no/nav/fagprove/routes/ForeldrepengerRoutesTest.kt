@@ -5,6 +5,7 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
@@ -18,6 +19,9 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import no.nav.fagprove.dto.BehandlingResultatResponse
 import no.nav.fagprove.dto.ErrorResponse
+import no.nav.fagprove.dto.InternMerknadRequest
+import no.nav.fagprove.dto.InternMerknadResponse
+import no.nav.fagprove.dto.InterneMerknaderResponse
 import no.nav.fagprove.dto.ManuellBeslutningRequest
 import no.nav.fagprove.dto.ManuellBeslutningTypeDto
 import no.nav.fagprove.dto.SakResponse
@@ -206,6 +210,63 @@ class ForeldrepengerRoutesTest {
         }
 
     @Test
+    fun `henter tom intern merknad for eksisterende sak`() =
+        testApp { client ->
+            val behandling = client.startBehandling(TestSoknader.innvilgetId)
+
+            val response = client.get("$API_BASE/saker/${behandling.sakId}/intern-merknad")
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            val merknad = response.body<InternMerknadResponse>()
+            assertEquals(behandling.sakId, merknad.sakId)
+            assertEquals(false, merknad.komplisert)
+            assertEquals("", merknad.kommentar)
+            assertNull(merknad.oppdatertAv)
+            assertNull(merknad.oppdatertTidspunkt)
+        }
+
+    @Test
+    fun `oppretter og oppdaterer intern merknad for sak`() =
+        testApp { client ->
+            val behandling = client.startBehandling(TestSoknader.innvilgetId)
+
+            val opprettet =
+                client
+                    .putInternMerknad(
+                        sakId = behandling.sakId,
+                        request =
+                            InternMerknadRequest(
+                                komplisert = true,
+                                kommentar = "  Krevde ekstra kvalitetssikring  ",
+                                oppdatertAv = " Z990123 ",
+                            ),
+                    ).body<InternMerknadResponse>()
+
+            assertEquals(behandling.sakId, opprettet.sakId)
+            assertEquals(true, opprettet.komplisert)
+            assertEquals("Krevde ekstra kvalitetssikring", opprettet.kommentar)
+            assertEquals("Z990123", opprettet.oppdatertAv)
+            assertNotNull(opprettet.oppdatertTidspunkt)
+
+            val oppdatert =
+                client
+                    .putInternMerknad(
+                        sakId = behandling.sakId,
+                        request =
+                            InternMerknadRequest(
+                                komplisert = false,
+                                kommentar = "",
+                                oppdatertAv = "Z990456",
+                            ),
+                    ).body<InternMerknadResponse>()
+
+            assertEquals(behandling.sakId, oppdatert.sakId)
+            assertEquals(false, oppdatert.komplisert)
+            assertEquals("", oppdatert.kommentar)
+            assertEquals("Z990456", oppdatert.oppdatertAv)
+        }
+
+    @Test
     fun `avviser ugyldig sak id med strukturert feil`() =
         testApp { client ->
             val response = client.get("$API_BASE/saker/ikke-et-tall")
@@ -216,6 +277,88 @@ class ForeldrepengerRoutesTest {
             assertEquals(400, error.status)
             assertEquals("id", error.errors.single().field)
             assertEquals("Sak id må være et positivt heltall", error.errors.single().message)
+        }
+
+    @Test
+    fun `avviser ugyldig intern merknad sak id med strukturert feil`() =
+        testApp { client ->
+            val response =
+                client.put("$API_BASE/saker/0/intern-merknad") {
+                    contentType(ContentType.Application.Json)
+                    setBody(
+                        InternMerknadRequest(
+                            komplisert = true,
+                            kommentar = "Krevende sak",
+                            oppdatertAv = "Z990123",
+                        ),
+                    )
+                }
+
+            assertEquals(HttpStatusCode.BadRequest, response.status)
+            val error = response.errorBody()
+            assertEquals("id", error.errors.single().field)
+            assertEquals("Sak id må være et positivt heltall", error.errors.single().message)
+        }
+
+    @Test
+    fun `avviser ugyldige verdier for intern merknad`() =
+        testApp { client ->
+            val behandling = client.startBehandling(TestSoknader.innvilgetId)
+
+            val missingComment =
+                client.put("$API_BASE/saker/${behandling.sakId}/intern-merknad") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"komplisert":true,"oppdatertAv":"Z990123"}""")
+                }
+            assertEquals(HttpStatusCode.BadRequest, missingComment.status)
+            assertEquals("kommentar", missingComment.firstErrorField())
+
+            val tooLongComment =
+                client.putInternMerknad(
+                    sakId = behandling.sakId,
+                    request =
+                        InternMerknadRequest(
+                            komplisert = false,
+                            kommentar = "x".repeat(1001),
+                            oppdatertAv = "Z990123",
+                        ),
+                )
+            assertEquals(HttpStatusCode.BadRequest, tooLongComment.status)
+            assertEquals("kommentar", tooLongComment.firstErrorField())
+
+            val emptyCommentForMarkedCase =
+                client.putInternMerknad(
+                    sakId = behandling.sakId,
+                    request =
+                        InternMerknadRequest(
+                            komplisert = true,
+                            kommentar = " ",
+                            oppdatertAv = "Z990123",
+                        ),
+                )
+            assertEquals(HttpStatusCode.BadRequest, emptyCommentForMarkedCase.status)
+            assertEquals("kommentar", emptyCommentForMarkedCase.firstErrorField())
+
+            val missingOppdatertAv =
+                client.put("$API_BASE/saker/${behandling.sakId}/intern-merknad") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"komplisert":false,"kommentar":""}""")
+                }
+            assertEquals(HttpStatusCode.BadRequest, missingOppdatertAv.status)
+            assertEquals("oppdatertAv", missingOppdatertAv.firstErrorField())
+
+            val tooLongOppdatertAv =
+                client.putInternMerknad(
+                    sakId = behandling.sakId,
+                    request =
+                        InternMerknadRequest(
+                            komplisert = false,
+                            kommentar = "",
+                            oppdatertAv = "Z".repeat(101),
+                        ),
+                )
+            assertEquals(HttpStatusCode.BadRequest, tooLongOppdatertAv.status)
+            assertEquals("oppdatertAv", tooLongOppdatertAv.firstErrorField())
         }
 
     @Test
@@ -230,6 +373,15 @@ class ForeldrepengerRoutesTest {
             assertEquals(404, error.status)
             assertEquals("Saken finnes ikke", error.detail)
             assertFalse(responseText.contains("999999"))
+        }
+
+    @Test
+    fun `intern merknad krever eksisterende sak`() =
+        testApp { client ->
+            val response = client.get("$API_BASE/saker/999999/intern-merknad")
+
+            assertEquals(HttpStatusCode.NotFound, response.status)
+            assertEquals("Saken finnes ikke", response.errorBody().detail)
         }
 
     @Test
@@ -358,6 +510,48 @@ class ForeldrepengerRoutesTest {
             assertEquals(92_648, engangsstonad.vedtak?.belopKroner)
         }
 
+    @Test
+    fun `oversikt returnerer kun saker med intern oppfolging`() =
+        testApp { client ->
+            val markert = client.startBehandling(TestSoknader.innvilgetId)
+            val ikkeMarkert = client.startBehandling(TestSoknader.avslagId)
+
+            client.putInternMerknad(
+                sakId = markert.sakId,
+                request =
+                    InternMerknadRequest(
+                        komplisert = true,
+                        kommentar = "Krevde ekstra kvalitetssikring",
+                        oppdatertAv = "Z990123",
+                    ),
+            )
+            client.putInternMerknad(
+                sakId = ikkeMarkert.sakId,
+                request =
+                    InternMerknadRequest(
+                        komplisert = false,
+                        kommentar = "",
+                        oppdatertAv = "Z990456",
+                    ),
+            )
+
+            val response = client.get("$API_BASE/interne-merknader")
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            val oversikt = response.body<InterneMerknaderResponse>()
+            assertEquals(1, oversikt.saker.size)
+            val sak = oversikt.saker.single()
+            assertEquals(markert.sakId, sak.sakId)
+            assertEquals("SAK-${markert.sakId.toString().padStart(6, '0')}", sak.saksnummer)
+            assertEquals("TEST-0001", sak.sokerIdent)
+            assertEquals(SakStatusDto.FERDIGSTILT, sak.status)
+            assertEquals(VedtaksvariantDto.INNVILGET, sak.vedtaksvariant)
+            assertEquals(true, sak.komplisert)
+            assertEquals("Krevde ekstra kvalitetssikring", sak.kommentar)
+            assertEquals("Z990123", sak.oppdatertAv)
+            assertNotNull(sak.oppdatertTidspunkt)
+        }
+
     private suspend fun HttpClient.startBehandling(soknadId: UUID): BehandlingResultatResponse {
         val response =
             post("$API_BASE/vedtak") {
@@ -369,7 +563,18 @@ class ForeldrepengerRoutesTest {
         return response.body()
     }
 
+    private suspend fun HttpClient.putInternMerknad(
+        sakId: Long,
+        request: InternMerknadRequest,
+    ): HttpResponse =
+        put("$API_BASE/saker/$sakId/intern-merknad") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+
     private suspend fun HttpResponse.errorBody(): ErrorResponse = serializer.decodeFromString(bodyAsText())
+
+    private suspend fun HttpResponse.firstErrorField(): String = errorBody().errors.single().field
 
     private companion object {
         const val API_BASE = "/api/v1/foreldrepenger"

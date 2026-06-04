@@ -36,6 +36,9 @@ Serveren starter på `http://localhost:8080`.
 | GET | `/api/v1/foreldrepenger/soknader` | Seedede testsøknader for demo/listing uten rått fødselsnummer |
 | POST | `/api/v1/foreldrepenger/vedtak` | Starter behandling av valgt søknad og returnerer sak-id, status, regelspor og vedtak/manuell vurdering. Gjentatte kall for samme søknad returnerer eksisterende sak idempotent |
 | GET | `/api/v1/foreldrepenger/saker/{id}` | Henter sak med søknadsdata, regelspor, status og vedtak/manuell vurdering. `{id}` er sak-/behandling-id fra `/vedtak` |
+| GET | `/api/v1/foreldrepenger/saker/{id}/intern-merknad` | Henter intern merknad for en sak, eller tom standardtilstand hvis ingen merknad er lagret |
+| PUT | `/api/v1/foreldrepenger/saker/{id}/intern-merknad` | Oppretter eller oppdaterer intern merknad for en sak, separat fra ordinære saks- og vedtaksdata |
+| GET | `/api/v1/foreldrepenger/interne-merknader` | Viser saker markert for intern oppfølging for teamleder/avdelingsleder |
 | POST | `/api/v1/foreldrepenger/saker/{id}/beslutning` | Lagrer manuell innvilgelse eller avslag for en sak som venter på manuell beslutning |
 | GET | `/internal/isalive` | Intern liveness probe |
 | GET | `/internal/isready` | Intern readiness probe som også sjekker database |

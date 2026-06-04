@@ -22,6 +22,7 @@ internal fun repositoryTestDatabase(): Database {
             BehandlingTable,
             RegelresultatTable,
             VedtakTable,
+            InternMerknadTable,
         )
     }
 
