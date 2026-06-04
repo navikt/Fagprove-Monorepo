@@ -46,7 +46,7 @@ Browserkode skal kalle samme-origin `/api/*`-ruter når frontend trenger BFF-end
 
 ## UI-struktur
 
-Forsiden bruker Aksel `InternalHeader`, en sentrert hovedcontainer og gjenbrukbare seksjonskort. `Velg søknad` er startpunktet for arbeidslisten, og `Mine søknader` er klar for API-kobling mot `/api/v1/foreldrepenger/soknader`.
+Forsiden bruker Aksel `InternalHeader`, en sentrert hovedcontainer og gjenbrukbare seksjonskort. `Velg søknad` henter arbeidslisten via samme-origin `/api/v1/foreldrepenger/soknader`, og `Åpne sak` starter behandling via `/api/v1/foreldrepenger/vedtak`.
 
 ## Prosjektstruktur
 

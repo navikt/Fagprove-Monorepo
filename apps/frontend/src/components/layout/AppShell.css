@@ -70,6 +70,18 @@
   min-height: 100%;
 }
 
+.application-table-wrapper {
+  overflow-x: auto;
+}
+
+.application-table-wrapper table {
+  min-width: 960px;
+}
+
+.table-subtext {
+  color: var(--a-text-subtle, #4f4b48);
+}
+
 @media (width < 768px) {
   .app-shell__main {
     padding-block: var(--a-spacing-6, 1.5rem) var(--a-spacing-8, 2rem);
