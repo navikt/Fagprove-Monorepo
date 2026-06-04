@@ -13,6 +13,76 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.rule-timeline {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rule-timeline__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  gap: var(--a-spacing-4, 1rem);
+  padding-block-end: var(--a-spacing-8, 2rem);
+}
+
+.rule-timeline__item:not(:last-child)::before {
+  position: absolute;
+  z-index: 0;
+  inset-block-start: 2rem;
+  inset-block-end: 0;
+  inset-inline-start: 1.25rem;
+  width: 2px;
+  background: var(--a-deepblue-400, #337c9b);
+  content: '';
+}
+
+.rule-timeline__marker {
+  z-index: 1;
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--a-deepblue-400, #337c9b);
+  color: var(--a-text-on-inverted, #fff);
+  font-weight: 700;
+}
+
+.rule-timeline__item[data-status='MANUELL_VURDERING'] .rule-timeline__marker {
+  background: var(--a-orange-500, #c77300);
+}
+
+.rule-timeline__item[data-status='IKKE_OPPFYLT'] .rule-timeline__marker {
+  background: var(--a-red-500, #c30000);
+}
+
+.rule-timeline__detail {
+  color: var(--a-text-subtle, #4d5968);
+}
+
+.decision-status-banner {
+  padding: var(--a-spacing-1, 0.25rem) var(--a-spacing-3, 0.75rem);
+  border-radius: var(--a-border-radius-medium, 4px);
+  text-align: center;
+}
+
+.decision-status-banner[data-variant='INNVILGET'],
+.decision-status-banner[data-variant='ENGANGSSTONAD'] {
+  background: var(--a-surface-success-subtle, #d8f9e6);
+}
+
+.decision-status-banner[data-variant='AVSLAG'] {
+  background: var(--a-surface-danger-subtle, #ffe2e2);
+}
+
+.decision-status-banner[data-variant='MANUELL_VURDERING'] {
+  background: var(--a-surface-warning-subtle, #fff4d6);
+}
+
 .quota-bar {
   display: flex;
   min-height: 1.75rem;
@@ -52,6 +122,15 @@
 
 .quota-bar__segment[data-tone='bonus'] {
   background: var(--a-orange-200, #ffd399);
+}
+
+.decision-heading:focus {
+  outline: 3px solid var(--a-border-focus, #00347d);
+  outline-offset: 3px;
+}
+
+.manual-decision-panel {
+  max-width: 28rem;
 }
 
 @media (width < 768px) {

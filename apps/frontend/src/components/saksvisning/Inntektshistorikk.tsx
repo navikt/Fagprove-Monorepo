@@ -9,7 +9,7 @@ import {
 export function Inntektshistorikk({ inntekter }: { inntekter: InntektDto[] }) {
   return (
     <Accordion size="small" indent={false}>
-      <Accordion.Item defaultOpen>
+      <Accordion.Item>
         <Accordion.Header>
           <VStack gap="space-4">
             <span className="aksel-heading aksel-heading--medium">Inntektshistorikk</span>

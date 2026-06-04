@@ -1,9 +1,15 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
-import { SAKER_API_PATH } from '../lib/foreldrepenger';
+import {
+  manuellBeslutningApiPath,
+  SAKER_API_PATH,
+  type ManuellBeslutningRequest,
+  type ManuellBeslutningType,
+} from '../lib/foreldrepenger';
 import { server } from '../../test/setup';
+import { createManualDecisionSakResponse } from '../mocks/foreldrepenger-seed';
 import { SaksvisningPage } from './SaksvisningPage';
 
 describe('SaksvisningPage', () => {
@@ -31,8 +37,8 @@ describe('SaksvisningPage', () => {
     expect(screen.getByRole('heading', { name: 'Opptjening' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Beregningsgrunnlag' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Stønadsperiode' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Kvotefordeling' })).toBeInTheDocument();
-    expect(screen.getByText(/Beregningsgrunnlag er 648000 kr/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Kvote' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Regelspor' })).toHaveTextContent('648000 kr');
   });
 
   it('renders case data and income history', async () => {
@@ -51,6 +57,7 @@ describe('SaksvisningPage', () => {
     expect(screen.getByText('Oppgitt årsinntekt')).toBeInTheDocument();
     expect(within(saksdataPanel).getByText(/648\s*000 kr/)).toBeInTheDocument();
 
+    await userEvent.click(screen.getByRole('button', { name: /Inntektshistorikk/ }));
     const incomeTable = screen.getByRole('table', { name: 'Inntektshistorikk' });
     expect(within(incomeTable).getByRole('columnheader', { name: 'Måned' })).toBeInTheDocument();
     expect(
@@ -72,6 +79,146 @@ describe('SaksvisningPage', () => {
     expect(screen.getByText('Ikke fastsatt maskinelt')).toBeInTheDocument();
   });
 
+  it('renders manual decision controls only for cases awaiting manual decision', async () => {
+    const { unmount } = render(<SaksvisningPage sakId="1001" />);
+
+    const vedtakPanel = await openVedtakTab();
+    expect(
+      within(vedtakPanel).queryByRole('button', { name: 'Innvilg manuelt' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(vedtakPanel).queryByRole('button', { name: 'Avslå manuelt' }),
+    ).not.toBeInTheDocument();
+    unmount();
+
+    render(<SaksvisningPage sakId="1004" />);
+    await openVedtakTab();
+
+    expect(screen.getByRole('button', { name: 'Innvilg manuelt' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Avslå manuelt' })).toBeInTheDocument();
+  });
+
+  it('shows manual reason, key rule information and decision controls for manual case', async () => {
+    render(<SaksvisningPage sakId="1004" />);
+
+    expect(await screen.findByText('Ikke fastsatt maskinelt')).toBeInTheDocument();
+
+    const vedtakPanel = await openVedtakTab();
+    const quotaPanel = screen
+      .getByRole('heading', { name: 'Kvotevisualisering' })
+      .closest('section');
+    if (!quotaPanel) {
+      throw new Error('Fant ikke kvotepanelet');
+    }
+
+    expect(
+      within(vedtakPanel).getAllByText(/For stort sprik mellom tre måneders snitt/).length,
+    ).toBeGreaterThan(0);
+    expect(within(quotaPanel).getByLabelText('Saksbehandlers begrunnelse')).toBeInTheDocument();
+    expect(within(quotaPanel).getByRole('button', { name: 'Innvilg manuelt' })).toBeInTheDocument();
+    expect(within(quotaPanel).getByRole('button', { name: 'Avslå manuelt' })).toBeInTheDocument();
+  });
+
+  it('shows validation error when begrunnelse is missing', async () => {
+    const user = userEvent.setup();
+    render(<SaksvisningPage sakId="1004" />);
+
+    await openVedtakTab();
+    await user.click(screen.getByRole('button', { name: 'Innvilg manuelt' }));
+
+    expect(
+      screen.getByText('Begrunnelse må fylles ut før du kan fatte manuelt vedtak.'),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Saksbehandlers begrunnelse')).toHaveFocus();
+  });
+
+  it.each<[string, ManuellBeslutningType]>([
+    ['Innvilg manuelt', 'INNVILGELSE'],
+    ['Avslå manuelt', 'AVSLAG'],
+  ])('sends expected payload when clicking %s', async (buttonName, expectedType) => {
+    const user = userEvent.setup();
+    let receivedRequest: ManuellBeslutningRequest | undefined;
+    server.use(
+      http.post(manuellBeslutningApiPath('1004'), async ({ request }) => {
+        receivedRequest = (await request.json()) as ManuellBeslutningRequest;
+        return HttpResponse.json(
+          createManualDecisionSakResponse(
+            receivedRequest.type,
+            receivedRequest.begrunnelse,
+            receivedRequest.besluttetAv,
+          ),
+        );
+      }),
+    );
+    render(<SaksvisningPage sakId="1004" />);
+
+    await openVedtakTab();
+    await user.type(
+      screen.getByLabelText('Saksbehandlers begrunnelse'),
+      '  Saksbehandler har kontrollert inntektsgrunnlaget.  ',
+    );
+    await user.click(screen.getByRole('button', { name: buttonName }));
+
+    await waitFor(() =>
+      expect(receivedRequest).toEqual({
+        type: expectedType,
+        begrunnelse: 'Saksbehandler har kontrollert inntektsgrunnlaget.',
+        besluttetAv: 'Kari Saksbehandler',
+      }),
+    );
+  });
+
+  it('updates the view to final vedtak after successful manual decision', async () => {
+    const user = userEvent.setup();
+    render(<SaksvisningPage sakId="1004" />);
+
+    const vedtakPanel = await openVedtakTab();
+    await user.type(
+      screen.getByLabelText('Saksbehandlers begrunnelse'),
+      'Inntekten er dokumentert.',
+    );
+    await user.click(screen.getByRole('button', { name: 'Innvilg manuelt' }));
+
+    expect(
+      await within(vedtakPanel).findByRole('row', { name: /Vedtaksvariant INNVILGET/ }),
+    ).toBeInTheDocument();
+    expect(within(vedtakPanel).getByText('Inntekten er dokumentert.')).toBeInTheDocument();
+    expect(
+      within(vedtakPanel).getByRole('row', { name: /Besluttet av Kari Saksbehandler/ }),
+    ).toBeInTheDocument();
+    expect(
+      within(vedtakPanel).getByRole('row', { name: /Besluttet tidspunkt 15\.06\.2026 kl\. 10:05/ }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Innvilg manuelt' })).not.toBeInTheDocument();
+    expect(screen.getByText('49 uker totalt')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: 'Kvotevisualisering' })).toHaveFocus(),
+    );
+  });
+
+  it('shows a safe error when manual decision submission fails', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post(manuellBeslutningApiPath('1004'), () =>
+        HttpResponse.json({ detail: 'Backend utilgjengelig' }, { status: 503 }),
+      ),
+    );
+    render(<SaksvisningPage sakId="1004" />);
+
+    await openVedtakTab();
+    await user.type(
+      screen.getByLabelText('Saksbehandlers begrunnelse'),
+      'Grunnlaget kan ikke godkjennes.',
+    );
+    await user.click(screen.getByRole('button', { name: 'Avslå manuelt' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Kunne ikke lagre manuell beslutning',
+    );
+    expect(screen.getByText('Backend utilgjengelig')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Avslå manuelt' })).toBeEnabled();
+  });
+
   it.each<[string, string, RegExp, RegExp | undefined]>([
     ['1001', 'Innvilget'],
     ['1002', 'Avslag'],
@@ -82,7 +229,7 @@ describe('SaksvisningPage', () => {
 
     const vedtakPanel = await openVedtakTab();
 
-    expect(within(vedtakPanel).getByText(label)).toBeInTheDocument();
+    expect(within(vedtakPanel).getAllByText(label).length).toBeGreaterThan(0);
   });
 
   it('renders beregning, stønadsperiode and kvoter for innvilget vedtak', async () => {
@@ -155,7 +302,7 @@ describe('SaksvisningPage', () => {
 
     const vedtakPanel = await openVedtakTab();
 
-    expect(within(vedtakPanel).getByText('Manuell vurdering')).toBeInTheDocument();
+    expect(within(vedtakPanel).getAllByText('Manuell vurdering').length).toBeGreaterThan(0);
     expect(
       within(vedtakPanel).getByText('Saken må behandles manuelt før endelig vedtak kan fattes.'),
     ).toBeInTheDocument();
