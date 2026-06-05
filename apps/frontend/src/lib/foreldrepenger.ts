@@ -1,6 +1,7 @@
 export const SOKNADER_API_PATH = '/api/v1/foreldrepenger/soknader';
 export const SAKER_API_PATH = '/api/v1/foreldrepenger/saker';
 export const VEDTAK_API_PATH = '/api/v1/foreldrepenger/vedtak';
+export const DEMO_RESET_API_PATH = '/api/v1/foreldrepenger/demo/reset';
 
 export type SakStatus = 'OPPRETTET' | 'TIL_MANUELL_VURDERING' | 'FERDIGSTILT';
 export type Vedtaksvariant = 'INNVILGET' | 'AVSLAG' | 'ENGANGSSTONAD' | 'MANUELL_VURDERING';
@@ -29,6 +30,10 @@ export interface SoknadListeDto {
 
 export interface StartBehandlingRequest {
   soknadId: string;
+}
+
+export interface DemoResetResponse {
+  antallSoknader: number;
 }
 
 export interface ManuellBeslutningRequest {
@@ -280,6 +285,18 @@ export async function startBehandling(soknadId: string): Promise<BehandlingResul
 
   if (typeof response.sakId !== 'number') {
     throw new ApiClientError('Frontend-API-et returnerte en uventet sakrespons', 502);
+  }
+
+  return response;
+}
+
+export async function tilbakestillDemodata(): Promise<DemoResetResponse> {
+  const response = await fetchJson<DemoResetResponse>(DEMO_RESET_API_PATH, {
+    method: 'POST',
+  });
+
+  if (typeof response.antallSoknader !== 'number') {
+    throw new ApiClientError('Frontend-API-et returnerte et uventet svar på nullstilling', 502);
   }
 
   return response;

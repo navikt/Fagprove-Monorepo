@@ -17,7 +17,9 @@ import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import no.nav.fagprove.application.DemoResetService
 import no.nav.fagprove.dto.BehandlingResultatResponse
+import no.nav.fagprove.dto.DemoResetResponse
 import no.nav.fagprove.dto.ErrorResponse
 import no.nav.fagprove.dto.InternMerknadRequest
 import no.nav.fagprove.dto.InternMerknadResponse
@@ -32,6 +34,7 @@ import no.nav.fagprove.dto.VedtaksvariantDto
 import no.nav.fagprove.plugins.configureAuthentication
 import no.nav.fagprove.plugins.configureRouting
 import no.nav.fagprove.plugins.configureSerialization
+import no.nav.fagprove.repository.BehandlingRepository
 import no.nav.fagprove.repository.SoknadRepository
 import no.nav.fagprove.repository.repositoryTestDatabase
 import no.nav.fagprove.seed.TestSoknadSeeder
@@ -50,11 +53,13 @@ class ForeldrepengerRoutesTest {
 
     private fun testApp(
         enforceAuth: Boolean = false,
+        demoResetEnabled: Boolean = false,
         block: suspend ApplicationTestBuilder.(HttpClient) -> Unit,
     ) = testApplication {
         application {
             val database = repositoryTestDatabase()
-            TestSoknadSeeder(SoknadRepository(database)).seed()
+            val soknadRepository = SoknadRepository(database)
+            TestSoknadSeeder(soknadRepository).seed()
 
             configureSerialization()
             val authEnabled =
@@ -63,9 +68,19 @@ class ForeldrepengerRoutesTest {
                 } else {
                     false
                 }
+            val demoReset =
+                if (demoResetEnabled) {
+                    DemoResetService(
+                        behandlingRepository = BehandlingRepository(database),
+                        reseed = { TestSoknadSeeder(soknadRepository).seed().size },
+                    )::reset
+                } else {
+                    null
+                }
             configureRouting(
                 database = database,
                 enforceForeldrepengerAuth = authEnabled,
+                demoReset = demoReset,
             )
         }
 
@@ -548,6 +563,44 @@ class ForeldrepengerRoutesTest {
             assertEquals("Krevde ekstra kvalitetssikring", sak.kommentar)
             assertEquals("Z990123", sak.oppdatertAv)
             assertNotNull(sak.oppdatertTidspunkt)
+        }
+
+    @Test
+    fun `demo reset er ikke tilgjengelig naar flagget er av`() =
+        testApp(demoResetEnabled = false) { client ->
+            val response = client.post("$API_BASE/demo/reset")
+
+            assertEquals(HttpStatusCode.NotFound, response.status)
+        }
+
+    @Test
+    fun `demo reset nullstiller behandlinger og beholder seedede soknader`() =
+        testApp(demoResetEnabled = true) { client ->
+            val behandling = client.startBehandling(TestSoknader.innvilgetId)
+            assertEquals(
+                HttpStatusCode.OK,
+                client.get("$API_BASE/saker/${behandling.sakId}").status,
+            )
+
+            val resetResponse = client.post("$API_BASE/demo/reset")
+
+            assertEquals(HttpStatusCode.OK, resetResponse.status)
+            assertEquals(5, resetResponse.body<DemoResetResponse>().antallSoknader)
+
+            assertEquals(
+                HttpStatusCode.NotFound,
+                client.get("$API_BASE/saker/${behandling.sakId}").status,
+            )
+
+            val soknader =
+                client
+                    .get("$API_BASE/soknader")
+                    .body<SoknadListeResponse>()
+            assertEquals(5, soknader.soknader.size)
+            assertContentEquals(
+                TestSoknader.alle.map { it.id.toString() },
+                soknader.soknader.map { it.id },
+            )
         }
 
     private suspend fun HttpClient.startBehandling(soknadId: UUID): BehandlingResultatResponse {

@@ -60,6 +60,12 @@
   color: var(--a-text-subtle, #4f4b48);
 }
 
+.demo-reset-panel {
+  border: 1px dashed var(--a-border-warning, #d47b00);
+  border-radius: var(--a-border-radius-medium, 0.25rem);
+  background: var(--a-surface-subtle, #f7f7f7);
+}
+
 .empty-state {
   border: 1px dashed var(--a-border-subtle, #c6c2bf);
   border-radius: var(--a-border-radius-medium, 0.25rem);

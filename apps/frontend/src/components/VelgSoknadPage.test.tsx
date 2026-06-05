@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
-import { SOKNADER_API_PATH, VEDTAK_API_PATH } from '../lib/foreldrepenger';
+import { SOKNADER_API_PATH, VEDTAK_API_PATH, DEMO_RESET_API_PATH } from '../lib/foreldrepenger';
 import { seedSoknaderResponse } from '../mocks/foreldrepenger-seed';
 import { server } from '../../test/setup';
 import { VelgSoknadPage } from './VelgSoknadPage';
@@ -107,5 +107,58 @@ describe('VelgSoknadPage', () => {
 
     expect(await screen.findByText('Komplisert sak')).toBeInTheDocument();
     expect(screen.queryByText('Skal ikke vises i listen')).not.toBeInTheDocument();
+  });
+
+  it('asks for confirmation before resetting demo data', async () => {
+    const user = userEvent.setup();
+    render(<VelgSoknadPage />);
+
+    await screen.findByText('FP-001');
+    await user.click(screen.getByRole('button', { name: 'Tilbakestill demodata' }));
+
+    expect(screen.getByRole('button', { name: 'Bekreft nullstilling' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Avbryt' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Avbryt' }));
+    expect(screen.queryByRole('button', { name: 'Bekreft nullstilling' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tilbakestill demodata' })).toBeInTheDocument();
+  });
+
+  it('resets demo data and refreshes the application list on confirmation', async () => {
+    let resetCalls = 0;
+    server.use(
+      http.post(DEMO_RESET_API_PATH, () => {
+        resetCalls += 1;
+        return HttpResponse.json({ antallSoknader: 5 });
+      }),
+    );
+
+    const user = userEvent.setup();
+    render(<VelgSoknadPage />);
+
+    await screen.findByText('FP-001');
+    await user.click(screen.getByRole('button', { name: 'Tilbakestill demodata' }));
+    await user.click(screen.getByRole('button', { name: 'Bekreft nullstilling' }));
+
+    expect(await screen.findByText(/Demodata er tilbakestilt\. 5/)).toBeInTheDocument();
+    expect(resetCalls).toBe(1);
+    expect(screen.getByText('FP-001')).toBeInTheDocument();
+  });
+
+  it('shows an error if resetting demo data fails', async () => {
+    server.use(
+      http.post(DEMO_RESET_API_PATH, () =>
+        HttpResponse.json({ detail: 'Demo-nullstilling er deaktivert' }, { status: 404 }),
+      ),
+    );
+
+    const user = userEvent.setup();
+    render(<VelgSoknadPage />);
+
+    await screen.findByText('FP-001');
+    await user.click(screen.getByRole('button', { name: 'Tilbakestill demodata' }));
+    await user.click(screen.getByRole('button', { name: 'Bekreft nullstilling' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Demo-nullstilling er deaktivert');
   });
 });

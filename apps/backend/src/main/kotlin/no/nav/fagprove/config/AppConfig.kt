@@ -12,6 +12,12 @@ sealed class AppConfig {
     abstract val syncExternalSoknader: Boolean
     abstract val seedTestSoknader: Boolean
 
+    /**
+     * Når aktiv eksponeres demo-endepunktet for å nullstille saksbehandlingsdata.
+     * Aktivert som standard i alle miljøer; kan slås av med DEMO_RESET_ENABLED=false.
+     */
+    abstract val demoResetEnabled: Boolean
+
     data class DatabaseConfig(
         val url: String,
         val user: String,
@@ -24,6 +30,7 @@ sealed class AppConfig {
         override val digisisSoknadSourceUrl: URI,
         override val syncExternalSoknader: Boolean,
         override val seedTestSoknader: Boolean,
+        override val demoResetEnabled: Boolean,
     ) : AppConfig()
 
     data class External(
@@ -31,6 +38,7 @@ sealed class AppConfig {
         override val digisisSoknadSourceUrl: URI,
         override val syncExternalSoknader: Boolean,
         override val seedTestSoknader: Boolean,
+        override val demoResetEnabled: Boolean,
     ) : AppConfig()
 
     data class InMemory(
@@ -38,6 +46,7 @@ sealed class AppConfig {
         override val digisisSoknadSourceUrl: URI,
         override val syncExternalSoknader: Boolean,
         override val seedTestSoknader: Boolean,
+        override val demoResetEnabled: Boolean,
     ) : AppConfig()
 
     companion object {
@@ -47,6 +56,7 @@ sealed class AppConfig {
         private const val DIGISIS_SOKNAD_SOURCE_URL = "DIGISIS_SOKNAD_SOURCE_URL"
         private const val SYNC_EXTERNAL_SOKNADER = "SYNC_EXTERNAL_SOKNADER"
         private const val SEED_TEST_SOKNADER = "SEED_TEST_SOKNADER"
+        private const val DEMO_RESET_ENABLED = "DEMO_RESET_ENABLED"
 
         fun resolve(env: Map<String, String> = System.getenv()): AppConfig {
             val useTestcontainers = env["USE_TESTCONTAINERS"] == "true"
@@ -55,6 +65,7 @@ sealed class AppConfig {
             val digisisSoknadSourceUrl = env.digisisSoknadSourceUrl()
             val syncExternalSoknader = env.booleanValue(SYNC_EXTERNAL_SOKNADER)
             val seedTestSoknader = env.booleanValue(SEED_TEST_SOKNADER)
+            val demoResetEnabled = env.booleanValue(DEMO_RESET_ENABLED)
 
             return when {
                 useTestcontainers ->
@@ -70,6 +81,7 @@ sealed class AppConfig {
                         digisisSoknadSourceUrl = digisisSoknadSourceUrl,
                         syncExternalSoknader = syncExternalSoknader,
                         seedTestSoknader = seedTestSoknader,
+                        demoResetEnabled = demoResetEnabled,
                         defaultSyncExternalSoknader = true,
                         defaultSeedTestSoknader = false,
                         factory = ::Testcontainers,
@@ -80,6 +92,7 @@ sealed class AppConfig {
                         digisisSoknadSourceUrl = digisisSoknadSourceUrl,
                         syncExternalSoknader = syncExternalSoknader,
                         seedTestSoknader = seedTestSoknader,
+                        demoResetEnabled = demoResetEnabled,
                         defaultSyncExternalSoknader = true,
                         defaultSeedTestSoknader = false,
                         allowSeedTestSoknader = false,
@@ -98,6 +111,7 @@ sealed class AppConfig {
                         digisisSoknadSourceUrl = digisisSoknadSourceUrl,
                         syncExternalSoknader = syncExternalSoknader,
                         seedTestSoknader = seedTestSoknader,
+                        demoResetEnabled = demoResetEnabled,
                         defaultSyncExternalSoknader = true,
                         defaultSeedTestSoknader = false,
                         allowSeedTestSoknader = false,
@@ -116,6 +130,7 @@ sealed class AppConfig {
                         digisisSoknadSourceUrl = digisisSoknadSourceUrl,
                         syncExternalSoknader = syncExternalSoknader,
                         seedTestSoknader = seedTestSoknader,
+                        demoResetEnabled = demoResetEnabled,
                         defaultSyncExternalSoknader = false,
                         defaultSeedTestSoknader = true,
                         factory = ::InMemory,
@@ -128,10 +143,11 @@ sealed class AppConfig {
             digisisSoknadSourceUrl: URI,
             syncExternalSoknader: Boolean?,
             seedTestSoknader: Boolean?,
+            demoResetEnabled: Boolean?,
             defaultSyncExternalSoknader: Boolean,
             defaultSeedTestSoknader: Boolean,
             allowSeedTestSoknader: Boolean = true,
-            factory: (DatabaseConfig, URI, Boolean, Boolean) -> T,
+            factory: (DatabaseConfig, URI, Boolean, Boolean, Boolean) -> T,
         ): T {
             val resolvedSyncExternalSoknader = syncExternalSoknader ?: defaultSyncExternalSoknader
             val resolvedSeedTestSoknader =
@@ -149,11 +165,14 @@ sealed class AppConfig {
                 "$SYNC_EXTERNAL_SOKNADER=true cannot be combined with $SEED_TEST_SOKNADER=true"
             }
 
+            val resolvedDemoResetEnabled = demoResetEnabled ?: true
+
             return factory(
                 database,
                 digisisSoknadSourceUrl,
                 resolvedSyncExternalSoknader,
                 resolvedSeedTestSoknader,
+                resolvedDemoResetEnabled,
             )
         }
 

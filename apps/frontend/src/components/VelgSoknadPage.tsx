@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   BodyLong,
   BodyShort,
@@ -25,6 +25,7 @@ import {
   harKomplisertOppfolging,
   hentSoknader,
   startBehandling,
+  tilbakestillDemodata,
   type SoknadListeDto,
 } from '../lib/foreldrepenger';
 
@@ -129,34 +130,27 @@ export function VelgSoknadPage({ onNavigate = navigateTo }: VelgSoknadPageProps)
   const [listError, setListError] = useState<string>();
   const [openError, setOpenError] = useState<string>();
   const [openingSoknadId, setOpeningSoknadId] = useState<string>();
+  const [confirmingReset, setConfirmingReset] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [resetError, setResetError] = useState<string>();
+  const [resetSuccess, setResetSuccess] = useState<string>();
+
+  const loadSoknader = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await hentSoknader();
+      setSoknader(response);
+      setListError(undefined);
+    } catch (error) {
+      setListError(getErrorMessage(error, 'Kunne ikke hente søknader.'));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    let active = true;
-
-    async function loadSoknader() {
-      try {
-        const response = await hentSoknader();
-        if (active) {
-          setSoknader(response);
-          setListError(undefined);
-        }
-      } catch (error) {
-        if (active) {
-          setListError(getErrorMessage(error, 'Kunne ikke hente søknader.'));
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    }
-
     void loadSoknader();
-
-    return () => {
-      active = false;
-    };
-  }, []);
+  }, [loadSoknader]);
 
   async function handleOpenSak(soknad: SoknadListeDto) {
     setOpenError(undefined);
@@ -168,6 +162,31 @@ export function VelgSoknadPage({ onNavigate = navigateTo }: VelgSoknadPageProps)
     } catch (error) {
       setOpenError(getErrorMessage(error, 'Kunne ikke åpne saken. Prøv igjen.'));
       setOpeningSoknadId(undefined);
+    }
+  }
+
+  function handleStartReset() {
+    setResetError(undefined);
+    setResetSuccess(undefined);
+    setConfirmingReset(true);
+  }
+
+  async function handleConfirmReset() {
+    setResetError(undefined);
+    setResetSuccess(undefined);
+    setResetting(true);
+
+    try {
+      const result = await tilbakestillDemodata();
+      setConfirmingReset(false);
+      setResetSuccess(
+        `Demodata er tilbakestilt. ${result.antallSoknader} søknader er klare til behandling igjen.`,
+      );
+      await loadSoknader();
+    } catch (error) {
+      setResetError(getErrorMessage(error, 'Kunne ikke tilbakestille demodata. Prøv igjen.'));
+    } finally {
+      setResetting(false);
     }
   }
 
@@ -184,6 +203,66 @@ export function VelgSoknadPage({ onNavigate = navigateTo }: VelgSoknadPageProps)
           kvotefordeling.
         </BodyLong>
       </VStack>
+
+      <Box padding="space-16" className="demo-reset-panel" data-testid="demo-reset-panel">
+        <VStack gap="space-8">
+          <HStack gap="space-8" align="center" wrap>
+            <Tag size="small" variant="neutral">
+              Demo
+            </Tag>
+            <BodyShort size="small" weight="semibold">
+              Demoverktøy for presentasjon
+            </BodyShort>
+          </HStack>
+          <BodyShort size="small" className="table-subtext">
+            Tilbakestiller all saksbehandling og starter demoscenariene på nytt. Sletter alle
+            behandlinger slik at søknadene blir ubehandlet igjen.
+          </BodyShort>
+
+          {resetError && (
+            <LocalAlert status="error" role="alert" as="div">
+              <LocalAlert.Header>
+                <LocalAlert.Title as="div">{resetError}</LocalAlert.Title>
+              </LocalAlert.Header>
+            </LocalAlert>
+          )}
+
+          {resetSuccess && (
+            <LocalAlert status="success" role="status" as="div">
+              <LocalAlert.Header>
+                <LocalAlert.Title as="div">{resetSuccess}</LocalAlert.Title>
+              </LocalAlert.Header>
+            </LocalAlert>
+          )}
+
+          {confirmingReset ? (
+            <HStack gap="space-8" wrap>
+              <Button
+                variant="danger"
+                size="small"
+                loading={resetting}
+                onClick={() => void handleConfirmReset()}
+              >
+                Bekreft nullstilling
+              </Button>
+              <Button
+                variant="secondary"
+                size="small"
+                disabled={resetting}
+                onClick={() => setConfirmingReset(false)}
+              >
+                Avbryt
+              </Button>
+            </HStack>
+          ) : (
+            <HStack>
+              <Button variant="secondary" size="small" onClick={handleStartReset}>
+                Tilbakestill demodata
+              </Button>
+            </HStack>
+          )}
+        </VStack>
+      </Box>
 
       <SectionCard
         title="Mine søknader"

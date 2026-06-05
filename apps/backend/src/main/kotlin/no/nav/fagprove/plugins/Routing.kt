@@ -11,6 +11,7 @@ import io.ktor.server.request.path
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import no.nav.fagprove.api.ApiException
+import no.nav.fagprove.application.DemoResetResultat
 import no.nav.fagprove.application.ForeldrepengerService
 import no.nav.fagprove.dto.ErrorResponse
 import no.nav.fagprove.repository.BehandlingRepository
@@ -24,6 +25,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 fun Application.configureRouting(
     database: Database,
     enforceForeldrepengerAuth: Boolean = false,
+    demoReset: (() -> DemoResetResultat)? = null,
 ) {
     install(StatusPages) {
         exception<ApiException> { call, cause ->
@@ -99,6 +101,7 @@ fun Application.configureRouting(
                     internMerknadRepository = internMerknadRepository,
                 ),
             enforceAuth = enforceForeldrepengerAuth,
+            demoReset = demoReset,
         )
     }
 }
