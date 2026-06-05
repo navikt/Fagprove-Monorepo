@@ -25,15 +25,6 @@ class ApplicationTest {
             }
         }
 
-    @Test
-    fun `GET hello - returns JSON greeting`() =
-        testApp {
-            val response = client.get("/hello")
-            assertEquals(HttpStatusCode.OK, response.status)
-            assertTrue(response.contentType()?.match(ContentType.Application.Json) == true)
-            assertTrue(response.bodyAsText().contains("\"message\":\"Hello World!\""))
-        }
-
     // ── Observability ─────────────────────────────────────────────────────
 
     @Test

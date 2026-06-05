@@ -1,4 +1,4 @@
-rootProject.name = "fagprove-monorepo-template"
+rootProject.name = "fagprove-foreldrepenger-backend"
 
 dependencyResolutionManagement {
     repositories {
