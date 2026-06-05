@@ -77,10 +77,7 @@ fun Application.configureRouting(
     }
     routing {
         get("/") {
-            call.respondText("Hello World!")
-        }
-        get("/hello") {
-            call.respond(mapOf("message" to "Hello World!"))
+            call.respondText("Foreldrepenger API")
         }
         get("/isalive") { call.respond(HttpStatusCode.OK) }
         get("/isready") { call.respondReadiness(database) }
