@@ -13,7 +13,7 @@ enum class InntektsType {
 
     companion object {
         // Godkjent inntekt etter §§ 2-1 og 14-6. STIPEND_LANEKASSEN er ikke pensjonsgivende
-        // og teller derfor verken for opptjening eller beregningsgrunnlag.
+        // og teller derfor hverken for opptjening eller beregningsgrunnlag.
         val GODKJENTE: Set<InntektsType> =
             setOf(
                 ARBEID,
