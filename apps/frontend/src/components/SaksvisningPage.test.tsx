@@ -270,6 +270,22 @@ describe('SaksvisningPage', () => {
     ).toBeInTheDocument();
   });
 
+  it('exposes the quota distribution as a single accessible image label', async () => {
+    render(<SaksvisningPage sakId="1001" />);
+
+    await openVedtakTab();
+
+    const quotaImg = await screen.findByRole('img', { name: /^Kvotefordeling:/ });
+    const label = quotaImg.getAttribute('aria-label') ?? '';
+    expect(label).toContain('Mødrekvote 15 uker');
+    expect(label).toContain('Fedrekvote 15 uker');
+    expect(label).toMatch(/Total 49 uker\.$/);
+
+    quotaImg.querySelectorAll('.quota-bar__segment').forEach((segment) => {
+      expect(segment.hasAttribute('aria-label')).toBe(false);
+    });
+  });
+
   it.each([
     [
       '1002',

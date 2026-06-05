@@ -7,6 +7,11 @@
   padding-block: var(--a-spacing-8, 2rem) var(--a-spacing-12, 3rem);
 }
 
+.app-shell__navigation {
+  display: flex;
+  align-self: stretch;
+}
+
 .skip-link {
   position: absolute;
   width: 1px;

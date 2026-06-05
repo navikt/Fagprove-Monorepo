@@ -6,7 +6,12 @@ test('home page renders heading', async ({ page }) => {
 });
 
 test('renders internal header and demo view toggle', async ({ page }) => {
-  await expect(page.getByRole('link', { name: 'Foreldrepenger' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Hovednavigasjon' })).toBeVisible();
+  await expect(
+    page.getByRole('navigation', { name: 'Hovednavigasjon' }).getByRole('link', {
+      name: 'Foreldrepenger',
+    }),
+  ).toBeVisible();
   await expect(page.getByText('Kari Saksbehandler', { exact: true })).toBeVisible();
   await expect(page.getByText('Avdeling foreldrepenger')).toBeVisible();
 
@@ -68,6 +73,19 @@ test('submits a manual decision and shows final vedtak', async ({ page }) => {
 
 test('has no accessibility violations', async ({ page }) => {
   await expect(page.getByRole('columnheader', { name: 'Sak' })).toBeVisible();
+
+  const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+
+  expect(results.violations).toEqual([]);
+});
+
+test('case view with quota visualisation has no accessibility violations', async ({ page }) => {
+  await page.getByRole('button', { name: 'Åpne sak' }).first().click();
+  await expect(page).toHaveURL(/\/saker\/1001$/);
+
+  await page.getByRole('tab', { name: 'Vedtak' }).click();
+  await expect(page.getByRole('heading', { name: 'Kvotevisualisering' })).toBeVisible();
+  await expect(page.getByRole('img', { name: /^Kvotefordeling:/ })).toBeVisible();
 
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
 
