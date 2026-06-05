@@ -88,6 +88,11 @@
   color: var(--a-text-subtle, #4f4b48);
 }
 
+.intern-merknad-card {
+  background: var(--a-surface-subtle, #f7f7f7);
+  border-color: var(--a-border-subtle, #c6c2bf);
+}
+
 @media (width < 768px) {
   .app-shell__main {
     padding-block: var(--a-spacing-6, 1.5rem) var(--a-spacing-8, 2rem);

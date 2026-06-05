@@ -1,20 +1,33 @@
-import { useState } from 'react';
 import { BodyShort, HStack, ToggleGroup } from '@navikt/ds-react';
 
-const demoViews = [
+export type DemoView = 'saksbehandler' | 'teamleder';
+
+const demoViews: { value: DemoView; label: string }[] = [
   { value: 'saksbehandler', label: 'Saksbehandler' },
   { value: 'teamleder', label: 'Teamleder' },
 ];
 
-export function DemoViewToggle() {
-  const [selectedView, setSelectedView] = useState(demoViews[0].value);
+interface DemoViewToggleProps {
+  value: DemoView;
+  onChange: (value: DemoView) => void;
+}
 
+function isDemoView(value: string): value is DemoView {
+  return value === 'saksbehandler' || value === 'teamleder';
+}
+
+export function DemoViewToggle({ value, onChange }: DemoViewToggleProps) {
   return (
     <HStack gap="space-16" align="center" wrap className="demo-view-toggle">
+      <BodyShort weight="semibold">Visning som</BodyShort>
       <ToggleGroup
         size="small"
-        value={selectedView}
-        onChange={setSelectedView}
+        value={value}
+        onChange={(next) => {
+          if (isDemoView(next)) {
+            onChange(next);
+          }
+        }}
         aria-label="Demovisning"
       >
         {demoViews.map((view) => (
