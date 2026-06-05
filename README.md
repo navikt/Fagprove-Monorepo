@@ -2,6 +2,12 @@
 
 Fullstack-app for fagprøve med Astro/React-frontend, Ktor-backend og Nais-deploy.
 
+## Dokumentasjon
+
+- [Systemdokumentasjon](docs/systemdokumentasjon.md)
+- [Risikovurdering](docs/risikovurdering.md)
+- [Personvernsvurdering](docs/personvernsvurdering.md)
+
 ## Kom i gang
 
 ```bash
@@ -17,7 +23,7 @@ Frontend starter på `http://localhost:4321`, og backend starter på `http://loc
 apps/
   frontend/   Astro SSR, React 19, TypeScript og Aksel
   backend/    Ktor, Kotlin på JVM 21, Exposed, Flyway og PostgreSQL
-docs/         Deploy- og arkitekturdokumentasjon
+docs/         Systemdokumentasjon, Risikovurdering og Personvernsvurdering
 ```
 
 ## Kommandoer
@@ -36,7 +42,7 @@ docs/         Deploy- og arkitekturdokumentasjon
 
 Frontend er en Astro SSR-app med React-komponenter og Nav Aksel. Nettleseren kaller kun samme-origin `/api/*`-ruter i Astro. Disse rutene fungerer som BFF og kaller backend via `BACKEND_URL`.
 
-Backend er en Ktor-applikasjon med REST-endepunkter for `cities` og `users`. I Nais er backend intern og tilgjengelig fra frontend gjennom `accessPolicy`. Staging og prod bruker Cloud SQL med `envVarPrefix: DB`.
+Backend er en Ktor-applikasjon med REST-endepunkter for foreldrepenger. Backend kjører regelmotoren, lagrer behandlinger, regelspor, vedtak og interne merknader, og eksponerer API under `/api/v1/foreldrepenger/*`. I Nais er backend intern og tilgjengelig fra frontend gjennom `accessPolicy`. Staging og prod bruker Cloud SQL med `envVarPrefix: DB`.
 
 ## Miljøvariabler
 

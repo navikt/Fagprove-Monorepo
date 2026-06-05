@@ -1,7 +1,7 @@
 openapi: "3.1.0"
 info:
   title: Fagprøve Backend API
-  description: Backend API for the Fagprøve Monorepo Template
+  description: Backend API for foreldrepenger-saksbehandling i fagprøven
   version: 0.0.1
 servers:
   - url: http://localhost:8080
@@ -14,32 +14,13 @@ paths:
       summary: Root endpoint
       responses:
         "200":
-          description: Hello World greeting
+          description: Foreldrepenger API greeting
           content:
             text/plain:
               schema:
                 type: string
                 examples:
-                  - "Hello World!"
-
-  /hello:
-    get:
-      operationId: getHello
-      summary: JSON greeting used by the frontend BFF demo
-      responses:
-        "200":
-          description: Greeting
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - message
-                properties:
-                  message:
-                    type: string
-                    examples:
-                      - "Hello World!"
+                  - "Foreldrepenger API"
 
   /isalive:
     get:
