@@ -110,10 +110,12 @@
 
 .quota-bar__segment[data-tone='mother'] {
   background: var(--a-blue-500, #0067c5);
+  color: var(--ax-text-accent-contrast, #fff);
 }
 
 .quota-bar__segment[data-tone='father'] {
-  background: var(--a-green-500, #06893a);
+  background: var(--ax-success-700, #007629);
+  color: var(--ax-text-success-contrast, #fff);
 }
 
 .quota-bar__segment[data-tone='shared'] {

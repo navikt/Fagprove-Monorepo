@@ -11,6 +11,10 @@ export function KvoteFordeling({ kvoter }: KvoteFordelingProps) {
   const segments = getKvoteSegments(kvoter).filter((segment) => segment.uker > 0);
   const visualSegments = segments.filter((segment) => segment.uker > 0 && kvoter.totalUker > 0);
 
+  const fordelingLabel = `Kvotefordeling: ${visualSegments
+    .map((segment) => `${segment.label} ${formatUker(segment.uker)}`)
+    .join(', ')}. Total ${formatUker(kvoter.totalUker)}.`;
+
   return (
     <>
       <Box padding="space-12" borderWidth="1">
@@ -22,18 +26,13 @@ export function KvoteFordeling({ kvoter }: KvoteFordelingProps) {
             </Tag>
           </HStack>
           {visualSegments.length > 0 ? (
-            <div
-              className="quota-bar"
-              role="img"
-              aria-label={`Kvotevisualisering med total ${formatUker(kvoter.totalUker)}`}
-            >
+            <div className="quota-bar" role="img" aria-label={fordelingLabel}>
               {visualSegments.map((segment) => (
                 <div
                   key={segment.label}
                   className="quota-bar__segment"
                   data-tone={segment.tone}
                   style={{ width: `${(segment.uker / kvoter.totalUker) * 100}%` }}
-                  aria-label={`${segment.label} ${formatUker(segment.uker)}`}
                 >
                   {segment.uker}
                 </div>

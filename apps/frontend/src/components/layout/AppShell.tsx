@@ -13,11 +13,20 @@ export function AppShell({ children }: AppShellProps) {
         Hopp til hovedinnhold
       </a>
       <InternalHeader className="app-shell__header">
-        <InternalHeader.Title href="/">Foreldrepenger</InternalHeader.Title>
+        <nav aria-label="Hovednavigasjon" className="app-shell__navigation">
+          <InternalHeader.Title href="/">Foreldrepenger</InternalHeader.Title>
+        </nav>
         <Spacer />
         <InternalHeader.User name="Kari Saksbehandler" description="Avdeling foreldrepenger" />
       </InternalHeader>
-      <Page.Block as="main" width="xl" gutters id="main-content" className="app-shell__main">
+      <Page.Block
+        as="main"
+        width="xl"
+        gutters
+        id="main-content"
+        tabIndex={-1}
+        className="app-shell__main"
+      >
         {children}
       </Page.Block>
     </Page>
