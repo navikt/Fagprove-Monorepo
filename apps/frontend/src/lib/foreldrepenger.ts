@@ -227,7 +227,27 @@ async function readResponseBody(response: Response): Promise<unknown> {
   }
 }
 
+const RATE_LIMIT_MAX = 30;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const recentCallTimestamps: number[] = [];
+
+export function _resetRateLimitForTests(): void {
+  recentCallTimestamps.length = 0;
+}
+
+export function checkRateLimit(): void {
+  const now = Date.now();
+  while (recentCallTimestamps.length > 0 && recentCallTimestamps[0] < now - RATE_LIMIT_WINDOW_MS) {
+    recentCallTimestamps.shift();
+  }
+  if (recentCallTimestamps.length >= RATE_LIMIT_MAX) {
+    throw new ApiClientError('For mange forespørsler. Vent litt og prøv igjen.', 429);
+  }
+  recentCallTimestamps.push(now);
+}
+
 async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
+  checkRateLimit();
   let response: Response;
   try {
     response = await fetch(path, {
