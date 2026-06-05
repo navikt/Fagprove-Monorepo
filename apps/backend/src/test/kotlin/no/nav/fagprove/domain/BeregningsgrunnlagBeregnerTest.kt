@@ -1,5 +1,6 @@
 package no.nav.fagprove.domain
 
+import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -48,6 +49,17 @@ class BeregningsgrunnlagBeregnerTest {
             )
 
         assertIs<Grunnlag.OK>(resultat.grunnlag)
+    }
+
+    @Test
+    fun `should anchor calculation window to permisjonsstart not innsendt`() {
+        val resultat =
+            BeregningsgrunnlagBeregner.beregn(
+                testSoknad(innsendt = LocalDate.of(2020, 1, 1)),
+            )
+
+        val grunnlag = assertIs<Grunnlag.OK>(resultat.grunnlag)
+        assertEquals(Penger(600_000), grunnlag.belop)
     }
 
     @Test

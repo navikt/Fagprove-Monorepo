@@ -131,10 +131,10 @@ internal fun digisisSoknad(
 
 internal fun validDigisisInntektshistorikk(): List<DigisisInntektDto> =
     listOf(
-        DigisisInntektDto("2025-12", "ARBEID", 50_000),
         DigisisInntektDto("2026-01", "ARBEID", 50_000),
         DigisisInntektDto("2026-02", "ARBEID", 50_000),
         DigisisInntektDto("2026-03", "ARBEID", 50_000),
         DigisisInntektDto("2026-04", "ARBEID", 50_000),
         DigisisInntektDto("2026-05", "ARBEID", 50_000),
+        DigisisInntektDto("2026-06", "ARBEID", 50_000),
     )

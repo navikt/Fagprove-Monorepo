@@ -1,5 +1,6 @@
 package no.nav.fagprove.domain
 
+import java.time.LocalDate
 import java.time.YearMonth
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,10 +38,23 @@ class OpptjeningsvurdererTest {
     fun `should reject when income is below half G`() {
         val resultat =
             Opptjeningsvurderer.vurder(
-                testSoknad(inntekter = seksTellendeInntekter(kroner = 10_000)),
+                testSoknad(inntekter = seksTellendeInntekter(kroner = 8_000)),
             )
 
         assertFalse(resultat.oppfylt)
+    }
+
+    @Test
+    fun `should anchor reference window to termindato not innsendt`() {
+        val soknad =
+            testSoknad(
+                // innsendt vilkårlig langt unna; vinduet skal styres av termindato
+                innsendt = LocalDate.of(2020, 1, 1),
+            )
+
+        val resultat = Opptjeningsvurderer.vurder(soknad)
+
+        assertTrue(resultat.oppfylt)
     }
 
     @Test
