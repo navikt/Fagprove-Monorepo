@@ -1,6 +1,7 @@
 import type { HttpHandler } from 'msw';
 import { http, HttpResponse } from 'msw';
 import {
+  DEMO_RESET_API_PATH,
   SAKER_API_PATH,
   SOKNADER_API_PATH,
   VEDTAK_API_PATH,
@@ -73,6 +74,9 @@ export const handlers: HttpHandler[] = [
     manualDecisionSakResponses.set(id, updatedSak);
     return HttpResponse.json(updatedSak);
   }),
+  http.post(DEMO_RESET_API_PATH, () =>
+    HttpResponse.json({ antallSoknader: seedSoknaderResponse.soknader.length }),
+  ),
   http.post(VEDTAK_API_PATH, async ({ request }) => {
     const body = (await request.json()) as { soknadId?: unknown };
     const soknadId = typeof body.soknadId === 'string' ? body.soknadId : '';

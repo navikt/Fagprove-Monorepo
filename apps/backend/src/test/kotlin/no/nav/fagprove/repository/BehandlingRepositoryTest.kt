@@ -65,6 +65,46 @@ class BehandlingRepositoryTest {
     }
 
     @Test
+    fun `slettAlle fjerner all behandlingstilstand men beholder soknader`() {
+        val database = repositoryTestDatabase()
+        val soknadRepository = SoknadRepository(database)
+        val soknad = testSoknad()
+        soknadRepository.lagre(soknad)
+        val repository = BehandlingRepository(database)
+        val behandling =
+            repository.opprettMedVedtak(
+                soknadId = soknad.id,
+                resultat =
+                    Saksbehandlingsresultat(
+                        vedtak =
+                            Vedtak.Engangsstonad(
+                                belop = Penger(92_000),
+                                begrunnelse = "Soker fyller vilkar for engangsstonad",
+                            ),
+                        regelspor = testRegelspor(),
+                    ),
+                besluttetAv = "saksbehandler",
+            )
+        InternMerknadRepository(database).lagreEllerOppdater(
+            behandlingId = behandling.id,
+            komplisert = true,
+            kommentar = "Krever ekstra blikk",
+            oppdatertAv = "Z990123",
+        )
+
+        repository.slettAlle()
+
+        assertEquals(null, repository.hent(behandling.id))
+        transaction(database) {
+            assertEquals(0, BehandlingTable.selectAll().toList().size)
+            assertEquals(0, RegelresultatTable.selectAll().toList().size)
+            assertEquals(0, VedtakTable.selectAll().toList().size)
+            assertEquals(0, InternMerknadTable.selectAll().toList().size)
+        }
+        assertNotNull(soknadRepository.hent(soknad.id))
+    }
+
+    @Test
     fun `ruller tilbake behandling og regelspor naar vedtak ikke kan lagres`() {
         val database = repositoryTestDatabase()
         val soknad = testSoknad()

@@ -26,6 +26,11 @@ data class StartBehandlingRequest(
 )
 
 @Serializable
+data class DemoResetResponse(
+    val antallSoknader: Int,
+)
+
+@Serializable
 data class BehandlingResultatResponse(
     val sakId: Long,
     val soknadId: String,

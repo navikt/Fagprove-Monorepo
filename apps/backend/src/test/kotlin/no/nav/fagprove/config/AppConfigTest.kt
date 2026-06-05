@@ -187,4 +187,64 @@ class AppConfigTest {
             error.message,
         )
     }
+
+    @Test
+    fun `resolve enables demo reset by default for in-memory databases`() {
+        val config = AppConfig.resolve(emptyMap())
+
+        assertIs<AppConfig.InMemory>(config)
+        assertTrue(config.demoResetEnabled)
+    }
+
+    @Test
+    fun `resolve enables demo reset by default for local testcontainers`() {
+        val config = AppConfig.resolve(mapOf("USE_TESTCONTAINERS" to "true"))
+
+        assertIs<AppConfig.Testcontainers>(config)
+        assertTrue(config.demoResetEnabled)
+    }
+
+    @Test
+    fun `resolve can disable demo reset for local databases`() {
+        val config =
+            AppConfig.resolve(
+                mapOf(
+                    "USE_TESTCONTAINERS" to "true",
+                    "DEMO_RESET_ENABLED" to "false",
+                ),
+            )
+
+        assertIs<AppConfig.Testcontainers>(config)
+        assertFalse(config.demoResetEnabled)
+    }
+
+    @Test
+    fun `resolve enables demo reset by default for external databases`() {
+        val config =
+            AppConfig.resolve(
+                mapOf(
+                    "DB_HOST" to "postgres.local",
+                    "DB_DATABASE" to "fagprove",
+                    "DB_USERNAME" to "app",
+                    "DB_PASSWORD" to "secret",
+                ),
+            )
+
+        assertIs<AppConfig.External>(config)
+        assertTrue(config.demoResetEnabled)
+    }
+
+    @Test
+    fun `resolve can disable demo reset for external databases`() {
+        val config =
+            AppConfig.resolve(
+                mapOf(
+                    "POSTGRES_URL" to "jdbc:postgresql://postgres.local:5432/fagprove",
+                    "DEMO_RESET_ENABLED" to "false",
+                ),
+            )
+
+        assertIs<AppConfig.External>(config)
+        assertFalse(config.demoResetEnabled)
+    }
 }

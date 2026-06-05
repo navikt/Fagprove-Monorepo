@@ -11,6 +11,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import no.nav.fagprove.api.ApiValidationException
+import no.nav.fagprove.application.DemoResetResultat
 import no.nav.fagprove.application.ForeldrepengerService
 import no.nav.fagprove.application.SakResult
 import no.nav.fagprove.application.StartBehandlingResult
@@ -20,6 +21,7 @@ import no.nav.fagprove.domain.Regelresultat
 import no.nav.fagprove.domain.Soknad
 import no.nav.fagprove.domain.Vedtak
 import no.nav.fagprove.dto.BehandlingResultatResponse
+import no.nav.fagprove.dto.DemoResetResponse
 import no.nav.fagprove.dto.FieldError
 import no.nav.fagprove.dto.InntektDto
 import no.nav.fagprove.dto.InternMerknadOversiktDto
@@ -52,17 +54,21 @@ import java.util.UUID
 fun Route.foreldrepengerRoutes(
     service: ForeldrepengerService,
     enforceAuth: Boolean,
+    demoReset: (() -> DemoResetResultat)? = null,
 ) {
     if (enforceAuth) {
         authenticate(IDPORTEN_AUTH_PROVIDER) {
-            foreldrepengerApiRoutes(service)
+            foreldrepengerApiRoutes(service, demoReset)
         }
     } else {
-        foreldrepengerApiRoutes(service)
+        foreldrepengerApiRoutes(service, demoReset)
     }
 }
 
-private fun Route.foreldrepengerApiRoutes(service: ForeldrepengerService) {
+private fun Route.foreldrepengerApiRoutes(
+    service: ForeldrepengerService,
+    demoReset: (() -> DemoResetResultat)?,
+) {
     route("/api/v1/foreldrepenger") {
         get("/soknader") {
             call.respond(
@@ -70,6 +76,15 @@ private fun Route.foreldrepengerApiRoutes(service: ForeldrepengerService) {
                     soknader = service.listSoknader().map { it.toListeDto() },
                 ),
             )
+        }
+
+        if (demoReset != null) {
+            post("/demo/reset") {
+                val resultat = demoReset()
+                call.respond(
+                    DemoResetResponse(antallSoknader = resultat.antallSoknader),
+                )
+            }
         }
 
         post("/vedtak") {

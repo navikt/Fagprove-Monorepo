@@ -6,6 +6,7 @@ import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.deleteAll
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.insertAndGetId
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -69,6 +70,19 @@ class BehandlingRepository(
         inRepositoryTransaction(database) {
             findBehandlingForSoknad(soknadId)
         }
+
+    /**
+     * Demo-bruk: sletter all saksbehandlingstilstand (behandlinger med vedtak, regelspor og
+     * interne merknader) i FK-trygg rekkefølge. Søknader og inntekter røres ikke.
+     */
+    fun slettAlle() {
+        inRepositoryTransaction(database) {
+            VedtakTable.deleteAll()
+            RegelresultatTable.deleteAll()
+            InternMerknadTable.deleteAll()
+            BehandlingTable.deleteAll()
+        }
+    }
 }
 
 internal fun insertBehandling(

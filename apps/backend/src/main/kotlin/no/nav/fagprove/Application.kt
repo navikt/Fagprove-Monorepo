@@ -1,6 +1,8 @@
 package no.nav.fagprove
 
 import io.ktor.server.application.*
+import no.nav.fagprove.application.DemoResetResultat
+import no.nav.fagprove.application.DemoResetService
 import no.nav.fagprove.config.AppConfig
 import no.nav.fagprove.config.DatabaseFactory
 import no.nav.fagprove.external.DigisisSoknadClient
@@ -11,6 +13,7 @@ import no.nav.fagprove.plugins.configureHTTP
 import no.nav.fagprove.plugins.configureMonitoring
 import no.nav.fagprove.plugins.configureRouting
 import no.nav.fagprove.plugins.configureSerialization
+import no.nav.fagprove.repository.BehandlingRepository
 import no.nav.fagprove.repository.SoknadRepository
 import no.nav.fagprove.seed.TestSoknadSeeder
 
@@ -33,21 +36,39 @@ internal fun Application.configureApplication(
 ) {
     val database = DatabaseFactory.init(this, config)
     val soknadRepository = SoknadRepository(database)
+    val behandlingRepository = BehandlingRepository(database)
 
-    when {
-        config.syncExternalSoknader -> {
-            val synkroniserteSoknader =
+    val seedSoknader: () -> Int = {
+        when {
+            config.syncExternalSoknader ->
                 DigisisSoknadSeeder(
                     soknadRepository = soknadRepository,
                     digisisSoknadClient = digisisSoknadClientFactory(config),
-                ).seed()
-            log.info("Synkroniserte ${synkroniserteSoknader.size} Digisis-testsøknader")
-        }
-        config.seedTestSoknader -> {
-            val seededeSoknader = TestSoknadSeeder(soknadRepository).seed()
-            log.info("Seedet ${seededeSoknader.size} deterministiske testsøknader")
+                ).seed().size
+            config.seedTestSoknader ->
+                TestSoknadSeeder(soknadRepository).seed().size
+            else -> 0
         }
     }
+
+    val antallSeedede = seedSoknader()
+    when {
+        config.syncExternalSoknader -> log.info("Synkroniserte $antallSeedede Digisis-testsøknader")
+        config.seedTestSoknader -> log.info("Seedet $antallSeedede deterministiske testsøknader")
+    }
+
+    val demoReset: (() -> DemoResetResultat)? =
+        if (config.demoResetEnabled) {
+            val demoResetService =
+                DemoResetService(
+                    behandlingRepository = behandlingRepository,
+                    reseed = seedSoknader,
+                )
+            log.warn("Demo-nullstilling er AKTIVERT (POST /api/v1/foreldrepenger/demo/reset)")
+            demoResetService::reset
+        } else {
+            null
+        }
 
     configureHTTP()
     val enforceForeldrepengerAuth = configureAuthentication()
@@ -56,5 +77,6 @@ internal fun Application.configureApplication(
     configureRouting(
         database = database,
         enforceForeldrepengerAuth = enforceForeldrepengerAuth,
+        demoReset = demoReset,
     )
 }

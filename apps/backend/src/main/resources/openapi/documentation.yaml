@@ -78,6 +78,32 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /api/v1/foreldrepenger/demo/reset:
+    post:
+      operationId: resetForeldrepengerDemodata
+      summary: Reset demo data
+      description: >
+        Demo endpoint for the fagprøve presenter. Deletes all behandlinger
+        (with vedtak, regelspor and interne merknader) and re-seeds the søknader so
+        every application returns to an unbehandlet state. Søknader themselves are not
+        deleted. Enabled in every environment by default; set `DEMO_RESET_ENABLED=false`
+        to disable it, in which case the route is not registered and returns 404.
+      security:
+        - idporten: []
+      responses:
+        "200":
+          description: Demo data was reset and søknader re-seeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoResetResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Demo reset is disabled in this environment
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /api/v1/foreldrepenger/vedtak:
     post:
       operationId: startForeldrepengerBehandling
@@ -408,6 +434,17 @@ components:
           type: string
           format: uuid
           minLength: 1
+
+    DemoResetResponse:
+      type: object
+      required:
+        - antallSoknader
+      properties:
+        antallSoknader:
+          type: integer
+          description: Number of søknader that were re-seeded after the reset
+          examples:
+            - 5
 
     BehandlingResultatResponse:
       type: object
