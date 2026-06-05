@@ -31,7 +31,13 @@ object StonadsperiodeOppslag {
     }
 }
 
-fun Soknad.totalStonadsuker(): Int = dekningsgrad.grunnperiodeUker + flerbarnstilleggUker()
+fun Soknad.totalStonadsuker(): Int = grunnperiodeUker() + flerbarnstilleggUker()
+
+fun Soknad.grunnperiodeUker(): Int =
+    when (rettsforhold) {
+        Rettsforhold.KUN_FAR -> dekningsgrad.grunnperiodeKunFarUker
+        Rettsforhold.BEGGE_FORELDRE, Rettsforhold.KUN_MOR -> dekningsgrad.grunnperiodeBeggeUker
+    }
 
 fun Soknad.flerbarnstilleggUker(): Int =
     when (antallBarn) {

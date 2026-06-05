@@ -19,12 +19,12 @@ object BeregningsgrunnlagBeregner {
         val inntektPerManed =
             beregningsmaneder.map { maned ->
                 soknad.inntekter
-                    .filter { it.type != InntektsType.STIPEND_LANEKASSEN }
+                    .filter { it.type in InntektsType.GODKJENTE }
                     .filter { it.maned == maned }
                     .sumOf { it.belop.kroner }
             }
 
-        val beregnetAarsinntekt = (inntektPerManed.sum() / inntektPerManed.size) * 12
+        val beregnetAarsinntekt = (inntektPerManed.sum() * 12) / inntektPerManed.size
         val oppgittAarsinntekt = soknad.oppgittAarsinntekt.kroner
 
         if (oppgittAarsinntekt > 0 && harAvvikOverTjuefemProsent(beregnetAarsinntekt, oppgittAarsinntekt)) {
@@ -63,7 +63,8 @@ object BeregningsgrunnlagBeregner {
     ): Boolean = abs(beregnetAarsinntekt - oppgittAarsinntekt).toLong() * 100 > oppgittAarsinntekt.toLong() * 25
 
     private fun Soknad.sisteHeleManeder(antall: Int): List<YearMonth> {
-        val sisteHeleManed = YearMonth.from(innsendt).minusMonths(1)
+        val permisjonsstart = termindato.minusWeeks(3)
+        val sisteHeleManed = YearMonth.from(permisjonsstart).minusMonths(1)
         return (antall - 1 downTo 0).map { sisteHeleManed.minusMonths(it.toLong()) }
     }
 }

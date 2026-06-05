@@ -14,13 +14,13 @@ class StonadsperiodeOppslagTest {
     }
 
     @Test
-    fun `should find fifty nine weeks for one child with eighty percent coverage`() {
+    fun `should find sixty one weeks for one child with eighty percent coverage`() {
         val resultat =
             StonadsperiodeOppslag.finn(
                 testSoknad(dekningsgrad = Dekningsgrad.ATTI_PROSENT),
             )
 
-        assertEquals(Uker(59), resultat.stonadsperiode.totalUker)
+        assertEquals(Uker(61), resultat.stonadsperiode.totalUker)
     }
 
     @Test
@@ -37,6 +37,14 @@ class StonadsperiodeOppslagTest {
                 testSoknad(antallBarn = 4, dekningsgrad = Dekningsgrad.ATTI_PROSENT),
             )
 
-        assertEquals(Uker(115), resultat.stonadsperiode.totalUker)
+        assertEquals(Uker(118), resultat.stonadsperiode.totalUker)
+    }
+
+    @Test
+    fun `should give kun-far fewer base weeks`() {
+        val resultat =
+            StonadsperiodeOppslag.finn(testSoknad(rettsforhold = Rettsforhold.KUN_FAR))
+
+        assertEquals(Uker(40), resultat.stonadsperiode.totalUker)
     }
 }

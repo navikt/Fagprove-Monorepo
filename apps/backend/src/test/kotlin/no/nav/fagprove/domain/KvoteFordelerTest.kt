@@ -27,8 +27,8 @@ class KvoteFordelerTest {
 
         assertEquals(Uker(19), resultat.kvoter.modrekvote)
         assertEquals(Uker(19), resultat.kvoter.fedrekvote)
-        assertEquals(Uker(18), resultat.kvoter.fellesperiode)
-        assertEquals(Uker(59), resultat.kvoter.total)
+        assertEquals(Uker(20), resultat.kvoter.fellesperiode)
+        assertEquals(Uker(61), resultat.kvoter.total)
     }
 
     @Test
@@ -49,9 +49,10 @@ class KvoteFordelerTest {
 
         val resultat = KvoteFordeler.fordel(soknad, stonadsperiode)
 
-        assertEquals(Uker(15), resultat.kvoter.modrekvote)
+        assertEquals(Uker(46), resultat.kvoter.modrekvote)
         assertEquals(Uker(0), resultat.kvoter.fedrekvote)
-        assertEquals(Uker(31), resultat.kvoter.fellesperiode)
+        assertEquals(Uker(0), resultat.kvoter.fellesperiode)
+        assertEquals(Uker(3), resultat.kvoter.forskuddUker)
     }
 
     @Test
@@ -62,8 +63,9 @@ class KvoteFordelerTest {
         val resultat = KvoteFordeler.fordel(soknad, stonadsperiode)
 
         assertEquals(Uker(0), resultat.kvoter.modrekvote)
-        assertEquals(Uker(15), resultat.kvoter.fedrekvote)
-        assertEquals(Uker(34), resultat.kvoter.fellesperiode)
+        assertEquals(Uker(40), resultat.kvoter.fedrekvote)
+        assertEquals(Uker(0), resultat.kvoter.fellesperiode)
         assertEquals(Uker(0), resultat.kvoter.forskuddUker)
+        assertEquals(Uker(40), resultat.kvoter.total)
     }
 }

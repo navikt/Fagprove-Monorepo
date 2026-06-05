@@ -33,8 +33,8 @@ object TestSoknader {
                         februar = 49_000,
                         mars = 52_000,
                         april = 54_000,
-                        mai = 56_000,
-                        desember = 48_000,
+                        mai = 54_000,
+                        juni = 54_000,
                     ),
                 termindato = termindato,
                 rettsforhold = Rettsforhold.BEGGE_FORELDRE,
@@ -95,7 +95,7 @@ object TestSoknader {
                 rettsforhold = Rettsforhold.BEGGE_FORELDRE,
                 dekningsgrad = Dekningsgrad.HUNDRE_PROSENT,
                 antallBarn = 1,
-                // 50 000 kr i mars-mai gir 600 000 kr beregnet årsinntekt.
+                // 50 000 kr i april-juni gir 600 000 kr beregnet årsinntekt.
                 // Oppgitt 480 000 kr er nøyaktig 25 % lavere og skal ikke gi manuell vurdering.
                 oppgittAarsinntekt = Penger(480_000),
                 innsendt = innsendt,
@@ -103,20 +103,20 @@ object TestSoknader {
         )
 
     private fun inntektshistorikk(
-        desember: Int = 50_000,
         januar: Int = 50_000,
         februar: Int = 50_000,
         mars: Int = 50_000,
         april: Int = 50_000,
         mai: Int = 50_000,
+        juni: Int = 50_000,
     ): List<Inntektsregistrering> =
         listOf(
-            inntekt(YearMonth.of(2025, 12), desember),
             inntekt(YearMonth.of(2026, 1), januar),
             inntekt(YearMonth.of(2026, 2), februar, InntektsType.SYKEPENGER),
             inntekt(YearMonth.of(2026, 3), mars),
             inntekt(YearMonth.of(2026, 4), april),
             inntekt(YearMonth.of(2026, 5), mai, InntektsType.FORELDREPENGER),
+            inntekt(YearMonth.of(2026, 6), juni),
         )
 
     private fun inntekt(

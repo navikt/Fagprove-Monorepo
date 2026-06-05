@@ -38,7 +38,7 @@ internal fun testSoknad(
 
 internal fun seksTellendeInntekter(
     kroner: Int = 50_000,
-    slutt: YearMonth = YearMonth.of(2026, 5),
+    slutt: YearMonth = YearMonth.of(2026, 6),
 ) = (0L..5L).map { offset ->
     testInntekt(
         maned = slutt.minusMonths(offset),
@@ -48,7 +48,7 @@ internal fun seksTellendeInntekter(
 
 internal fun inntekterSisteTreManeder(
     kroner: Int = 50_000,
-    slutt: YearMonth = YearMonth.of(2026, 5),
+    slutt: YearMonth = YearMonth.of(2026, 6),
 ) = (0L..2L).map { offset ->
     testInntekt(
         maned = slutt.minusMonths(offset),

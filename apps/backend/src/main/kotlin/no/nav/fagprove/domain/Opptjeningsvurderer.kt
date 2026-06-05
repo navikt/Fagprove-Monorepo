@@ -20,7 +20,7 @@ object Opptjeningsvurderer {
         val referansemaneder = soknad.referansemaneder(REFERANSEPERIODE_MANEDER)
         val tellendeInntekter =
             soknad.inntekter
-                .filter { it.type != InntektsType.STIPEND_LANEKASSEN }
+                .filter { it.type in InntektsType.GODKJENTE }
                 .filter { it.belop.kroner > 0 }
                 .filter { it.maned in referansemaneder }
 
@@ -33,9 +33,10 @@ object Opptjeningsvurderer {
         }
 
         val samletInntekt = tellendeInntekter.sumOf { it.belop.kroner }
-        if (samletInntekt < MINSTEINNTEKT) {
+        val arsinntekt = samletInntekt.toLong() * 12 / REFERANSEPERIODE_MANEDER
+        if (arsinntekt < MINSTEINNTEKT) {
             return ikkeOppfylt(
-                "Tellende inntekt er $samletInntekt kr og under minstegrensen på $MINSTEINNTEKT kr",
+                "Omregnet årsinntekt er $arsinntekt kr og under minstegrensen på $MINSTEINNTEKT kr (½G)",
             )
         }
 
@@ -46,7 +47,7 @@ object Opptjeningsvurderer {
                     regel = Regelnavn.OPPTJENING,
                     status = RegelStatus.OPPFYLT,
                     begrunnelse =
-                        "Søker har $manederMedInntekt tellende inntektsmåneder og $samletInntekt kr i tellende inntekt",
+                        "Søker har $manederMedInntekt tellende inntektsmåneder og $arsinntekt kr i omregnet årsinntekt",
                 ),
         )
     }
@@ -63,7 +64,7 @@ object Opptjeningsvurderer {
         )
 
     private fun Soknad.referansemaneder(antall: Long): Set<YearMonth> {
-        val sisteHeleManed = YearMonth.from(innsendt).minusMonths(1)
-        return (0 until antall).map { sisteHeleManed.minusMonths(it) }.toSet()
+        val sisteManed = YearMonth.from(termindato).minusMonths(1)
+        return (0 until antall).map { sisteManed.minusMonths(it) }.toSet()
     }
 }

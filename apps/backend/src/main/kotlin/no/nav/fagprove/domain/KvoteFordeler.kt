@@ -12,26 +12,43 @@ object KvoteFordeler {
         soknad: Soknad,
         stonadsperiode: Stonadsperiode,
     ): KvoteFordelingResultat {
-        val bonusuker = soknad.flerbarnstilleggUker()
-        val forskuddUker = if (soknad.rettsforhold == Rettsforhold.KUN_FAR) 0 else FORSKUDD_UKER
-        val modrekvote = if (soknad.rettsforhold == Rettsforhold.KUN_FAR) 0 else soknad.dekningsgrad.foreldrekvoteUker
-        val fedrekvote = if (soknad.rettsforhold == Rettsforhold.KUN_MOR) 0 else soknad.dekningsgrad.foreldrekvoteUker
-        val fellesperiode =
-            stonadsperiode.totalUker.antall -
-                bonusuker -
-                forskuddUker -
-                modrekvote -
-                fedrekvote
+        val total = stonadsperiode.totalUker.antall
+        val foreldrekvote = soknad.dekningsgrad.foreldrekvoteUker
 
         val kvoter =
-            Kvoter(
-                modrekvote = Uker(modrekvote),
-                fedrekvote = Uker(fedrekvote),
-                fellesperiode = Uker(fellesperiode),
-                bonusuker = Uker(bonusuker),
-                forskuddUker = Uker(forskuddUker),
-                total = stonadsperiode.totalUker,
-            )
+            when (soknad.rettsforhold) {
+                Rettsforhold.BEGGE_FORELDRE -> {
+                    val bonusuker = soknad.flerbarnstilleggUker()
+                    Kvoter(
+                        modrekvote = Uker(foreldrekvote),
+                        fedrekvote = Uker(foreldrekvote),
+                        fellesperiode = Uker(total - foreldrekvote - foreldrekvote - FORSKUDD_UKER - bonusuker),
+                        bonusuker = Uker(bonusuker),
+                        forskuddUker = Uker(FORSKUDD_UKER),
+                        total = stonadsperiode.totalUker,
+                    )
+                }
+
+                Rettsforhold.KUN_MOR ->
+                    Kvoter(
+                        modrekvote = Uker(total - FORSKUDD_UKER),
+                        fedrekvote = Uker(0),
+                        fellesperiode = Uker(0),
+                        bonusuker = Uker(0),
+                        forskuddUker = Uker(FORSKUDD_UKER),
+                        total = stonadsperiode.totalUker,
+                    )
+
+                Rettsforhold.KUN_FAR ->
+                    Kvoter(
+                        modrekvote = Uker(0),
+                        fedrekvote = Uker(total),
+                        fellesperiode = Uker(0),
+                        bonusuker = Uker(0),
+                        forskuddUker = Uker(0),
+                        total = stonadsperiode.totalUker,
+                    )
+            }
 
         return KvoteFordelingResultat(
             kvoter = kvoter,
