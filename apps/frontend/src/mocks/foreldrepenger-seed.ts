@@ -1,4 +1,6 @@
 import type {
+  InternMerknad,
+  InternMerknadOversikt,
   ManuellBeslutningType,
   SakResponse,
   SoknadListeDto,
@@ -292,3 +294,39 @@ export function getSeedSakResponseById(sakId: string): SakResponse | undefined {
 export function getSeedSakIdForSoknad(soknadId: string): number {
   return seedSakIdBySoknadId[soknadId] ?? 1001;
 }
+
+export function emptyInternMerknad(sakId: number): InternMerknad {
+  return {
+    sakId,
+    komplisert: false,
+    kommentar: '',
+    oppdatertAv: null,
+    oppdatertTidspunkt: null,
+  };
+}
+
+export const seedInterneMerknader: Record<string, InternMerknad> = {
+  '1001': {
+    sakId: 1001,
+    komplisert: true,
+    kommentar:
+      'Avklarte kvotefordeling og beregningsgrunnlag med fagstøtte før endelig vedtak. Egnet for læring i teammøte.',
+    oppdatertAv: 'Kari Saksbehandler',
+    oppdatertTidspunkt: '2026-06-05T09:12:00Z',
+  },
+};
+
+export const seedInternMerknadOversikt: InternMerknadOversikt[] = [
+  {
+    sakId: 1001,
+    saksnummer: 'FP-001',
+    sokerIdent: 'TEST-0001',
+    status: 'FERDIGSTILT',
+    vedtaksvariant: 'INNVILGET',
+    komplisert: true,
+    kommentar:
+      'Avklarte kvotefordeling og beregningsgrunnlag med fagstøtte før endelig vedtak. Egnet for læring i teammøte.',
+    oppdatertAv: 'Kari Saksbehandler',
+    oppdatertTidspunkt: '2026-06-05T09:12:00Z',
+  },
+];

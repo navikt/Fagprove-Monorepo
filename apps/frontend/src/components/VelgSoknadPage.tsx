@@ -12,9 +12,10 @@ import {
   Tag,
   VStack,
 } from '@navikt/ds-react';
-import { DemoViewToggle } from './DemoViewToggle';
+import { type DemoView, DemoViewToggle } from './DemoViewToggle';
 import { PageContainer } from './layout/PageContainer';
 import { SectionCard } from './layout/SectionCard';
+import { TeamlederOversiktPage } from './TeamlederOversiktPage';
 import {
   ApiClientError,
   formatDekningsgrad,
@@ -125,6 +126,7 @@ function SoknadTable({
 }
 
 export function VelgSoknadPage({ onNavigate = navigateTo }: VelgSoknadPageProps) {
+  const [selectedView, setSelectedView] = useState<DemoView>('saksbehandler');
   const [soknader, setSoknader] = useState<SoknadListeDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState<string>();
@@ -192,134 +194,142 @@ export function VelgSoknadPage({ onNavigate = navigateTo }: VelgSoknadPageProps)
 
   return (
     <PageContainer>
-      <DemoViewToggle />
+      <DemoViewToggle value={selectedView} onChange={setSelectedView} />
 
-      <VStack gap="space-8">
-        <Heading level="1" size="xlarge">
-          Velg søknad
-        </Heading>
-        <BodyLong>
-          Saksbehandlers arbeidsliste for foreldrepenger. Åpne en søknad for regelspor, vedtak og
-          kvotefordeling.
-        </BodyLong>
-      </VStack>
+      {selectedView === 'teamleder' ? (
+        <TeamlederOversiktPage onNavigate={onNavigate} />
+      ) : (
+        <>
+          <VStack gap="space-8">
+            <Heading level="1" size="xlarge">
+              Velg søknad
+            </Heading>
+            <BodyLong>
+              Saksbehandlers arbeidsliste for foreldrepenger. Åpne en søknad for regelspor, vedtak
+              og kvotefordeling.
+            </BodyLong>
+          </VStack>
 
-      <Box padding="space-16" className="demo-reset-panel" data-testid="demo-reset-panel">
-        <VStack gap="space-8">
-          <HStack gap="space-8" align="center" wrap>
-            <Tag size="small" variant="neutral">
-              Demo
-            </Tag>
-            <BodyShort size="small" weight="semibold">
-              Demoverktøy for presentasjon
-            </BodyShort>
-          </HStack>
-          <BodyShort size="small" className="table-subtext">
-            Tilbakestiller all saksbehandling og starter demoscenariene på nytt. Sletter alle
-            behandlinger slik at søknadene blir ubehandlet igjen.
-          </BodyShort>
-
-          {resetError && (
-            <LocalAlert status="error" role="alert" as="div">
-              <LocalAlert.Header>
-                <LocalAlert.Title as="div">{resetError}</LocalAlert.Title>
-              </LocalAlert.Header>
-            </LocalAlert>
-          )}
-
-          {resetSuccess && (
-            <LocalAlert status="success" role="status" as="div">
-              <LocalAlert.Header>
-                <LocalAlert.Title as="div">{resetSuccess}</LocalAlert.Title>
-              </LocalAlert.Header>
-            </LocalAlert>
-          )}
-
-          {confirmingReset ? (
-            <HStack gap="space-8" wrap>
-              <Button
-                variant="danger"
-                size="small"
-                loading={resetting}
-                onClick={() => void handleConfirmReset()}
-              >
-                Bekreft nullstilling
-              </Button>
-              <Button
-                variant="secondary"
-                size="small"
-                disabled={resetting}
-                onClick={() => setConfirmingReset(false)}
-              >
-                Avbryt
-              </Button>
-            </HStack>
-          ) : (
-            <HStack>
-              <Button variant="secondary" size="small" onClick={handleStartReset}>
-                Tilbakestill demodata
-              </Button>
-            </HStack>
-          )}
-        </VStack>
-      </Box>
-
-      <SectionCard
-        title="Mine søknader"
-        description="Arbeidsliste for Kari Saksbehandler · sortert etter innsendt dato"
-      >
-        <VStack gap="space-16">
-          {openError && (
-            <LocalAlert status="error" role="alert" as="div">
-              <LocalAlert.Header>
-                <LocalAlert.Title as="div">{openError}</LocalAlert.Title>
-              </LocalAlert.Header>
-            </LocalAlert>
-          )}
-
-          {loading && (
-            <Box padding="space-24" className="empty-state" role="status">
-              <HStack gap="space-12" align="center">
-                <Loader size="medium" title="Henter søknader" />
-                <BodyShort>Henter søknader fra arbeidslisten ...</BodyShort>
+          <Box padding="space-16" className="demo-reset-panel" data-testid="demo-reset-panel">
+            <VStack gap="space-8">
+              <HStack gap="space-8" align="center" wrap>
+                <Tag size="small" variant="neutral">
+                  Demo
+                </Tag>
+                <BodyShort size="small" weight="semibold">
+                  Demoverktøy for presentasjon
+                </BodyShort>
               </HStack>
-            </Box>
-          )}
-
-          {!loading && listError && (
-            <LocalAlert status="error" role="alert" as="div">
-              <LocalAlert.Header>
-                <LocalAlert.Title as="div">Kunne ikke hente søknader</LocalAlert.Title>
-              </LocalAlert.Header>
-              <BodyShort>{listError}</BodyShort>
-            </LocalAlert>
-          )}
-
-          {!loading && !listError && soknader.length === 0 && (
-            <Box padding="space-24" className="empty-state">
-              <VStack gap="space-8">
-                <Heading level="3" size="small">
-                  Ingen søknader i arbeidslisten
-                </Heading>
-                <BodyShort>Det finnes ingen testsøknader som er klare til behandling.</BodyShort>
-              </VStack>
-            </Box>
-          )}
-
-          {!loading && !listError && soknader.length > 0 && (
-            <>
-              <SoknadTable
-                soknader={soknader}
-                openingSoknadId={openingSoknadId}
-                onOpenSak={(soknad) => void handleOpenSak(soknad)}
-              />
               <BodyShort size="small" className="table-subtext">
-                Viser {soknader.length} av {soknader.length} søknader
+                Tilbakestiller all saksbehandling og starter demoscenariene på nytt. Sletter alle
+                behandlinger slik at søknadene blir ubehandlet igjen.
               </BodyShort>
-            </>
-          )}
-        </VStack>
-      </SectionCard>
+
+              {resetError && (
+                <LocalAlert status="error" role="alert" as="div">
+                  <LocalAlert.Header>
+                    <LocalAlert.Title as="div">{resetError}</LocalAlert.Title>
+                  </LocalAlert.Header>
+                </LocalAlert>
+              )}
+
+              {resetSuccess && (
+                <LocalAlert status="success" role="status" as="div">
+                  <LocalAlert.Header>
+                    <LocalAlert.Title as="div">{resetSuccess}</LocalAlert.Title>
+                  </LocalAlert.Header>
+                </LocalAlert>
+              )}
+
+              {confirmingReset ? (
+                <HStack gap="space-8" wrap>
+                  <Button
+                    variant="danger"
+                    size="small"
+                    loading={resetting}
+                    onClick={() => void handleConfirmReset()}
+                  >
+                    Bekreft nullstilling
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="small"
+                    disabled={resetting}
+                    onClick={() => setConfirmingReset(false)}
+                  >
+                    Avbryt
+                  </Button>
+                </HStack>
+              ) : (
+                <HStack>
+                  <Button variant="secondary" size="small" onClick={handleStartReset}>
+                    Tilbakestill demodata
+                  </Button>
+                </HStack>
+              )}
+            </VStack>
+          </Box>
+
+          <SectionCard
+            title="Mine søknader"
+            description="Arbeidsliste for Kari Saksbehandler · sortert etter innsendt dato"
+          >
+            <VStack gap="space-16">
+              {openError && (
+                <LocalAlert status="error" role="alert" as="div">
+                  <LocalAlert.Header>
+                    <LocalAlert.Title as="div">{openError}</LocalAlert.Title>
+                  </LocalAlert.Header>
+                </LocalAlert>
+              )}
+
+              {loading && (
+                <Box padding="space-24" className="empty-state" role="status">
+                  <HStack gap="space-12" align="center">
+                    <Loader size="medium" title="Henter søknader" />
+                    <BodyShort>Henter søknader fra arbeidslisten ...</BodyShort>
+                  </HStack>
+                </Box>
+              )}
+
+              {!loading && listError && (
+                <LocalAlert status="error" role="alert" as="div">
+                  <LocalAlert.Header>
+                    <LocalAlert.Title as="div">Kunne ikke hente søknader</LocalAlert.Title>
+                  </LocalAlert.Header>
+                  <BodyShort>{listError}</BodyShort>
+                </LocalAlert>
+              )}
+
+              {!loading && !listError && soknader.length === 0 && (
+                <Box padding="space-24" className="empty-state">
+                  <VStack gap="space-8">
+                    <Heading level="3" size="small">
+                      Ingen søknader i arbeidslisten
+                    </Heading>
+                    <BodyShort>
+                      Det finnes ingen testsøknader som er klare til behandling.
+                    </BodyShort>
+                  </VStack>
+                </Box>
+              )}
+
+              {!loading && !listError && soknader.length > 0 && (
+                <>
+                  <SoknadTable
+                    soknader={soknader}
+                    openingSoknadId={openingSoknadId}
+                    onOpenSak={(soknad) => void handleOpenSak(soknad)}
+                  />
+                  <BodyShort size="small" className="table-subtext">
+                    Viser {soknader.length} av {soknader.length} søknader
+                  </BodyShort>
+                </>
+              )}
+            </VStack>
+          </SectionCard>
+        </>
+      )}
     </PageContainer>
   );
 }

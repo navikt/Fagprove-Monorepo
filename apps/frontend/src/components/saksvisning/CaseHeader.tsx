@@ -9,7 +9,13 @@ import {
 import { BabyIcon } from './BabyIcon';
 import { getSakTagVariant } from './helpers';
 
-export function CaseHeader({ sak }: { sak: SakResponse }) {
+export function CaseHeader({
+  sak,
+  komplisert = false,
+}: {
+  sak: SakResponse;
+  komplisert?: boolean;
+}) {
   const statusLabel = getSakStatusLabel(sak.status, sak.vedtak);
 
   return (
@@ -26,6 +32,11 @@ export function CaseHeader({ sak }: { sak: SakResponse }) {
             <Tag size="medium" variant={getSakTagVariant(sak)}>
               {statusLabel}
             </Tag>
+            {komplisert && (
+              <Tag size="medium" variant="warning">
+                Komplisert sak
+              </Tag>
+            )}
           </HStack>
           <BodyLong>{getScenarioLabel(sak.soknad)}</BodyLong>
           <BodyShort>

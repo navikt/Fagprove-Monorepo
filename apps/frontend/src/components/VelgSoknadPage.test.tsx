@@ -32,6 +32,20 @@ describe('VelgSoknadPage', () => {
     expect(teamleder).toHaveAttribute('aria-checked', 'true');
   });
 
+  it('switches to the team lead overview when selecting Teamleder', async () => {
+    render(<VelgSoknadPage />);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('radio', { name: 'Teamleder' }));
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Saker med intern oppfølging' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { level: 1, name: 'Velg søknad' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('shows a loading state while fetching applications', () => {
     render(<VelgSoknadPage />);
 

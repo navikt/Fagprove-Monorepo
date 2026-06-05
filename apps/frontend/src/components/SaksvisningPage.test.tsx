@@ -317,6 +317,26 @@ describe('SaksvisningPage', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows internal follow-up in its own tab and a complicated tag in the header', async () => {
+    const user = userEvent.setup();
+    render(<SaksvisningPage sakId="1001" />);
+
+    await screen.findByRole('heading', { level: 1, name: 'FP-001 · Ingrid Hansen' });
+    // CaseHeader gets the complicated tag from the loaded intern merknad (seed: sak 1001 is complicated).
+    expect((await screen.findAllByText('Komplisert sak')).length).toBeGreaterThan(0);
+
+    await user.click(await screen.findByRole('tab', { name: /Intern oppfølging/ }));
+
+    const heading = await screen.findByRole('heading', { level: 2, name: 'Intern oppfølging' });
+    const panel = heading.closest('section');
+    if (!panel) {
+      throw new Error('Fant ikke intern oppfølging-panelet');
+    }
+    expect(within(panel).getByText(/kun til internt bruk i Nav/)).toBeInTheDocument();
+    expect(within(panel).getByText('Lagret intern merknad')).toBeInTheDocument();
+    expect(within(panel).getByRole('button', { name: 'Rediger merknad' })).toBeInTheDocument();
+  });
+
   it('shows a loading state while fetching case details', () => {
     render(<SaksvisningPage sakId="1001" />);
 
