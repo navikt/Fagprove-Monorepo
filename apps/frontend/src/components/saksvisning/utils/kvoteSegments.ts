@@ -1,4 +1,4 @@
-import { type KvoterDto } from '../../lib/foreldrepenger';
+import { type KvoterDto } from '../../../lib/foreldrepenger';
 
 export interface KvoteSegment {
   label: string;

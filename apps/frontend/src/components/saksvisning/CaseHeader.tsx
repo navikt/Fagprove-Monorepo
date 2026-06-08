@@ -6,8 +6,8 @@ import {
   getScenarioLabel,
   type SakResponse,
 } from '../../lib/foreldrepenger';
-import { BabyIcon } from './BabyIcon';
-import { getSakTagVariant } from './helpers';
+import { BabyIcon } from './saksdata/BabyIcon';
+import { getSakTagVariant } from './utils/helpers';
 
 export function CaseHeader({
   sak,

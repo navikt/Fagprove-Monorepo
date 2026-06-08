@@ -2,9 +2,9 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
-import { SOKNADER_API_PATH, VEDTAK_API_PATH, DEMO_RESET_API_PATH } from '../lib/foreldrepenger';
-import { seedSoknaderResponse } from '../mocks/foreldrepenger-seed';
-import { server } from '../../test/setup';
+import { SOKNADER_API_PATH, VEDTAK_API_PATH, DEMO_RESET_API_PATH } from '../../lib/foreldrepenger';
+import { seedSoknaderResponse } from '../../mocks/foreldrepenger-seed';
+import { server } from '../../../test/setup';
 import { VelgSoknadPage } from './VelgSoknadPage';
 
 describe('VelgSoknadPage', () => {

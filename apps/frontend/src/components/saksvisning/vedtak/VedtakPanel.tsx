@@ -1,6 +1,6 @@
 import { BodyLong, Box, Heading, HStack, VStack } from '@navikt/ds-react';
-import { type SakResponse } from '../../lib/foreldrepenger';
-import { getManualReason } from './helpers';
+import { type SakResponse } from '../../../lib/foreldrepenger';
+import { getManualReason } from '../utils/helpers';
 import { VedtakStatusBanner } from './VedtakStatusBanner';
 import { VedtakSummaryTable } from './VedtakSummaryTable';
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { checkRateLimit, _resetRateLimitForTests, ApiClientError } from './foreldrepenger';
+import { checkRateLimit, _resetRateLimitForTests, ApiClientError } from './client';
 
 describe('checkRateLimit', () => {
   beforeEach(() => {

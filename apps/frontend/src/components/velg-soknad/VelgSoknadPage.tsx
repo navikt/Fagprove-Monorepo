@@ -13,8 +13,8 @@ import {
   VStack,
 } from '@navikt/ds-react';
 import { type DemoView, DemoViewToggle } from './DemoViewToggle';
-import { PageContainer } from './layout/PageContainer';
-import { SectionCard } from './layout/SectionCard';
+import { PageContainer } from '../layout/PageContainer';
+import { SectionCard } from '../layout/SectionCard';
 import { TeamlederOversiktPage } from './TeamlederOversiktPage';
 import {
   ApiClientError,
@@ -28,7 +28,7 @@ import {
   startBehandling,
   tilbakestillDemodata,
   type SoknadListeDto,
-} from '../lib/foreldrepenger';
+} from '../../lib/foreldrepenger';
 
 interface VelgSoknadPageProps {
   onNavigate?: (path: string) => void;

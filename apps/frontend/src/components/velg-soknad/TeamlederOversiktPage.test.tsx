@@ -2,8 +2,8 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
-import { INTERNE_MERKNADER_API_PATH } from '../lib/foreldrepenger';
-import { server } from '../../test/setup';
+import { INTERNE_MERKNADER_API_PATH } from '../../lib/foreldrepenger';
+import { server } from '../../../test/setup';
 import { TeamlederOversiktPage } from './TeamlederOversiktPage';
 
 describe('TeamlederOversiktPage', () => {

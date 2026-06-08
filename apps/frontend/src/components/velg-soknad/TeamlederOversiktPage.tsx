@@ -12,7 +12,7 @@ import {
   Tag,
   VStack,
 } from '@navikt/ds-react';
-import { SectionCard } from './layout/SectionCard';
+import { SectionCard } from '../layout/SectionCard';
 import {
   ApiClientError,
   formatIsoDate,
@@ -21,7 +21,7 @@ import {
   getVedtaksvariantLabel,
   listInterneMerknader,
   type InternMerknadOversikt,
-} from '../lib/foreldrepenger';
+} from '../../lib/foreldrepenger';
 
 interface TeamlederOversiktPageProps {
   onNavigate: (path: string) => void;
