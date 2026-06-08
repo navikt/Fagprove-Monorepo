@@ -1,4 +1,4 @@
-import { ApiClientError, fetchJson } from './client';
+import { ApiClientError, fetchJson, isRecord } from './client';
 import type {
   BehandlingResultatResponse,
   DemoResetResponse,
@@ -89,10 +89,6 @@ export async function startBehandling(soknadId: string): Promise<BehandlingResul
   }
 
   return response;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function isInternMerknad(value: unknown): value is InternMerknad {
