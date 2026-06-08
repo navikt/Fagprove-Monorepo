@@ -4,9 +4,9 @@ import {
   getSakStatusLabel,
   getScenarioLabel,
   type SakResponse,
-} from '../../lib/foreldrepenger';
-import { getSakTagVariant } from './helpers';
-import { Inntektshistorikk } from './Inntektshistorikk';
+} from '../../../lib/foreldrepenger';
+import { getSakTagVariant } from '../utils/helpers';
+import { Inntektshistorikk } from '../saksdata/Inntektshistorikk';
 import { RegelsporTimeline } from './RegelsporTimeline';
 
 export function RegelsporPanel({ sak }: { sak: SakResponse }) {

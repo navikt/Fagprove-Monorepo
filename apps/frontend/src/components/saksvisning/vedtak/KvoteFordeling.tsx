@@ -1,7 +1,7 @@
 import { BodyShort, Box, HStack, Table, Tag, VStack } from '@navikt/ds-react';
-import { type KvoterDto } from '../../lib/foreldrepenger';
-import { formatUker } from './helpers';
-import { getKvoteSegments } from './kvoteSegments';
+import { type KvoterDto } from '../../../lib/foreldrepenger';
+import { formatUker } from '../utils/helpers';
+import { getKvoteSegments } from '../utils/kvoteSegments';
 
 interface KvoteFordelingProps {
   kvoter: KvoterDto;

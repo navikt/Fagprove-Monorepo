@@ -5,8 +5,8 @@ import {
   formatKroner,
   formatRettsforhold,
   type SakResponse,
-} from '../../lib/foreldrepenger';
-import { getManualReason } from './helpers';
+} from '../../../lib/foreldrepenger';
+import { getManualReason } from '../utils/helpers';
 
 export function SaksdataPanel({ sak }: { sak: SakResponse }) {
   const soknad = sak.soknad;

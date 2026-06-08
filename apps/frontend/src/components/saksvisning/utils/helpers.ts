@@ -4,7 +4,7 @@ import {
   type RegelresultatDto,
   type SakResponse,
   type Vedtaksvariant,
-} from '../../lib/foreldrepenger';
+} from '../../../lib/foreldrepenger';
 
 export type SakTagVariant = 'success' | 'warning' | 'error' | 'info' | 'neutral';
 export type ModerateTagVariant =

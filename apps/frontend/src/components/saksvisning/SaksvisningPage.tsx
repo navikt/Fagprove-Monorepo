@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BodyShort, Box, HStack, Link, Loader, LocalAlert } from '@navikt/ds-react';
-import { NotFoundPage } from '../NotFoundPage';
+import { NotFoundPage } from '../error/NotFoundPage';
 import { PageContainer } from '../layout/PageContainer';
 import { ApiClientError, hentSak, type SakResponse } from '../../lib/foreldrepenger';
 import { SaksvisningContent } from './SaksvisningContent';

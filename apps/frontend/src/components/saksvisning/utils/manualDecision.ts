@@ -1,4 +1,4 @@
-import { type SakResponse } from '../../lib/foreldrepenger';
+import { type SakResponse } from '../../../lib/foreldrepenger';
 
 export const DEMO_BESLUTTET_AV = 'Kari Saksbehandler';
 export const MAKS_BEGRUNNELSE_TEGN = 1_000;

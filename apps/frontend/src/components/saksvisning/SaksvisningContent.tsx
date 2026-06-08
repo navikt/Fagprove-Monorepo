@@ -8,11 +8,11 @@ import {
   type SakResponse,
 } from '../../lib/foreldrepenger';
 import { CaseHeader } from './CaseHeader';
-import { InternOppfolgingPanel } from './InternOppfolgingPanel';
-import { Kvotevisualisering } from './Kvotevisualisering';
-import { RegelsporPanel } from './RegelsporPanel';
-import { SaksdataPanel } from './SaksdataPanel';
-import { VedtakPanel } from './VedtakPanel';
+import { InternOppfolgingPanel } from './intern-oppfolging/InternOppfolgingPanel';
+import { Kvotevisualisering } from './vedtak/Kvotevisualisering';
+import { RegelsporPanel } from './regelspor/RegelsporPanel';
+import { SaksdataPanel } from './saksdata/SaksdataPanel';
+import { VedtakPanel } from './vedtak/VedtakPanel';
 import './Saksvisning.css';
 
 interface SaksvisningContentProps {

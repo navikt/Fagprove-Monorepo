@@ -1,5 +1,5 @@
 import { BodyLong, BodyShort, Heading, VStack } from '@navikt/ds-react';
-import { type RegelresultatDto } from '../../lib/foreldrepenger';
+import { type RegelresultatDto } from '../../../lib/foreldrepenger';
 
 interface RegelsporTimelineProps {
   regelspor: RegelresultatDto[];

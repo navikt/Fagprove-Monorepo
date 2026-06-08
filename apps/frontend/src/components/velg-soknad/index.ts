@@ -1,0 +1,1 @@
+export { VelgSoknadPage } from './VelgSoknadPage';

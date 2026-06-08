@@ -1,4 +1,4 @@
-import { getVedtaksvariantLabel, type Vedtaksvariant } from '../../lib/foreldrepenger';
+import { getVedtaksvariantLabel, type Vedtaksvariant } from '../../../lib/foreldrepenger';
 
 interface VedtakStatusBannerProps {
   variant?: Vedtaksvariant;

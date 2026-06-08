@@ -21,7 +21,7 @@ import {
   formatIsoDateTime,
   lagreInternMerknad,
   type InternMerknad,
-} from '../../lib/foreldrepenger';
+} from '../../../lib/foreldrepenger';
 
 const MAKS_INTERN_KOMMENTAR_TEGN = 1_000;
 

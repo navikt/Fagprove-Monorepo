@@ -7,9 +7,9 @@ import {
   SAKER_API_PATH,
   type ManuellBeslutningRequest,
   type ManuellBeslutningType,
-} from '../lib/foreldrepenger';
-import { server } from '../../test/setup';
-import { createManualDecisionSakResponse } from '../mocks/foreldrepenger-seed';
+} from '../../lib/foreldrepenger';
+import { server } from '../../../test/setup';
+import { createManualDecisionSakResponse } from '../../mocks/foreldrepenger-seed';
 import { SaksvisningPage } from './SaksvisningPage';
 
 describe('SaksvisningPage', () => {

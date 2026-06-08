@@ -5,8 +5,8 @@ import {
   besluttManuelt,
   type ManuellBeslutningType,
   type SakResponse,
-} from '../../lib/foreldrepenger';
-import { DEMO_BESLUTTET_AV, MAKS_BEGRUNNELSE_TEGN } from './manualDecision';
+} from '../../../lib/foreldrepenger';
+import { DEMO_BESLUTTET_AV, MAKS_BEGRUNNELSE_TEGN } from '../utils/manualDecision';
 
 interface ManuellBeslutningPanelProps {
   sak: SakResponse;

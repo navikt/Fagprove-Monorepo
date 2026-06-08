@@ -1,8 +1,8 @@
 import { useRef } from 'react';
 import { Box, Heading, LocalAlert, VStack } from '@navikt/ds-react';
-import { type KvoterDto, type SakResponse } from '../../lib/foreldrepenger';
+import { type KvoterDto, type SakResponse } from '../../../lib/foreldrepenger';
 import { KvoteFordeling } from './KvoteFordeling';
-import { shouldShowManualDecision } from './manualDecision';
+import { shouldShowManualDecision } from '../utils/manualDecision';
 import { ManuellBeslutningPanel } from './ManuellBeslutningPanel';
 
 interface KvotevisualiseringProps {

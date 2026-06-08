@@ -4,7 +4,7 @@ import {
   formatKroner,
   formatYearMonth,
   type InntektDto,
-} from '../../lib/foreldrepenger';
+} from '../../../lib/foreldrepenger';
 
 export function Inntektshistorikk({ inntekter }: { inntekter: InntektDto[] }) {
   return (

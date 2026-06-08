@@ -4,8 +4,8 @@ import {
   formatKroner,
   type SakResponse,
   type Vedtaksvariant,
-} from '../../lib/foreldrepenger';
-import { formatUker, getOpptjeningStatus } from './helpers';
+} from '../../../lib/foreldrepenger';
+import { formatUker, getOpptjeningStatus } from '../utils/helpers';
 
 interface VedtakSummaryTableProps {
   sak: SakResponse;
