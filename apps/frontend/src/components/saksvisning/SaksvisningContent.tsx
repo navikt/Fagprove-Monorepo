@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Box, Link, Tabs, VStack } from '@navikt/ds-react';
+import { ExclamationmarkTriangleIcon, GavelIcon, TasklistIcon } from '@navikt/aksel-icons';
 import {
   ApiClientError,
   hentInternMerknad,
@@ -69,27 +70,18 @@ export function SaksvisningContent({ sak, onSakChange }: SaksvisningContentProps
         <Tabs.List>
           <Tabs.Tab
             value="regelspor"
-            label={
-              <span>
-                <span aria-hidden="true">▦ </span>Regelspor
-              </span>
-            }
+            label="Regelspor"
+            icon={<TasklistIcon aria-hidden />}
           />
           <Tabs.Tab
             value="vedtak"
-            label={
-              <span>
-                <span aria-hidden="true">▧ </span>Vedtak
-              </span>
-            }
+            label="Vedtak"
+            icon={<GavelIcon aria-hidden />}
           />
           <Tabs.Tab
             value="intern-oppfolging"
-            label={
-              <span>
-                <span aria-hidden="true">⚠ </span>Intern oppfølging
-              </span>
-            }
+            label="Intern oppfølging"
+            icon={<ExclamationmarkTriangleIcon aria-hidden />}
           />
         </Tabs.List>
 
