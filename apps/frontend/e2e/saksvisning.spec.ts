@@ -4,7 +4,9 @@ test('opens an application and shows case details', async ({ page }) => {
   await page.getByRole('button', { name: 'Åpne sak' }).first().click();
 
   await expect(page).toHaveURL(/\/saker\/1001$/);
-  await expect(page.getByRole('heading', { level: 1, name: /FP-001 · Ingrid Hansen/ })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: /FP-001 · Ingrid Hansen/ }),
+  ).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Regelspor' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Saksdata' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Opptjening' })).toBeVisible();
@@ -31,7 +33,9 @@ test('submits a manual decision and shows final vedtak', async ({ page }) => {
   await expect(page).toHaveURL(/\/saker\/1004$/);
   await page.getByRole('tab', { name: 'Vedtak' }).click();
 
-  await page.getByLabel('Saksbehandlers begrunnelse').fill('Inntektsgrunnlaget er kontrollert manuelt.');
+  await page
+    .getByLabel('Saksbehandlers begrunnelse')
+    .fill('Inntektsgrunnlaget er kontrollert manuelt.');
   await page.getByRole('button', { name: 'Innvilg manuelt' }).click();
 
   await expect(page.getByRole('row', { name: /Vedtaksvariant INNVILGET/ })).toBeVisible();

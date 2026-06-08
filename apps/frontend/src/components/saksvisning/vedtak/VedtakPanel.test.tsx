@@ -20,8 +20,12 @@ describe('VedtakPanel', () => {
     render(<VedtakPanel sak={seedInnvilgetSakResponse} />);
 
     const panel = getVedtakPanel();
-    expect(within(panel).getByRole('row', { name: /Vedtaksvariant INNVILGET/ })).toBeInTheDocument();
-    expect(within(panel).getByRole('row', { name: /Beregningsgrunnlag 648\s*000 kr/ })).toBeInTheDocument();
+    expect(
+      within(panel).getByRole('row', { name: /Vedtaksvariant INNVILGET/ }),
+    ).toBeInTheDocument();
+    expect(
+      within(panel).getByRole('row', { name: /Beregningsgrunnlag 648\s*000 kr/ }),
+    ).toBeInTheDocument();
     expect(within(panel).getByRole('row', { name: /Stønadsperiode 49 uker/ })).toBeInTheDocument();
   });
 
@@ -30,23 +34,33 @@ describe('VedtakPanel', () => {
 
     const panel = getVedtakPanel();
     expect(within(panel).getByRole('row', { name: /Vedtaksvariant AVSLAG/ })).toBeInTheDocument();
-    expect(within(panel).getByText('Opptjeningskravet er ikke oppfylt og søker er ikke norsk borger')).toBeInTheDocument();
+    expect(
+      within(panel).getByText('Opptjeningskravet er ikke oppfylt og søker er ikke norsk borger'),
+    ).toBeInTheDocument();
   });
 
   it('renders engangsstønad with beløp', () => {
     render(<VedtakPanel sak={seedEngangsstonadSakResponse} />);
 
     const panel = getVedtakPanel();
-    expect(within(panel).getByRole('row', { name: /Vedtaksvariant ENGANGSSTONAD/ })).toBeInTheDocument();
-    expect(within(panel).getByRole('row', { name: /Beregningsgrunnlag 92\s*648 kr/ })).toBeInTheDocument();
+    expect(
+      within(panel).getByRole('row', { name: /Vedtaksvariant ENGANGSSTONAD/ }),
+    ).toBeInTheDocument();
+    expect(
+      within(panel).getByRole('row', { name: /Beregningsgrunnlag 92\s*648 kr/ }),
+    ).toBeInTheDocument();
   });
 
   it('shows pending state for manuell vurdering', () => {
     render(<VedtakPanel sak={seedManuellVurderingSakResponse} />);
 
     const panel = getVedtakPanel();
-    expect(within(panel).getByRole('row', { name: /Vedtaksvariant MANUELL_VURDERING/ })).toBeInTheDocument();
-    expect(within(panel).getByText('Saken må behandles manuelt før endelig vedtak kan fattes.')).toBeInTheDocument();
+    expect(
+      within(panel).getByRole('row', { name: /Vedtaksvariant MANUELL_VURDERING/ }),
+    ).toBeInTheDocument();
+    expect(
+      within(panel).getByText('Saken må behandles manuelt før endelig vedtak kan fattes.'),
+    ).toBeInTheDocument();
     expect(within(panel).getByRole('row', { name: /Beregningsgrunnlag —/ })).toBeInTheDocument();
   });
 });
