@@ -68,16 +68,8 @@ export function SaksvisningContent({ sak, onSakChange }: SaksvisningContentProps
 
       <Tabs defaultValue="regelspor">
         <Tabs.List>
-          <Tabs.Tab
-            value="regelspor"
-            label="Regelspor"
-            icon={<TasklistIcon aria-hidden />}
-          />
-          <Tabs.Tab
-            value="vedtak"
-            label="Vedtak"
-            icon={<GavelIcon aria-hidden />}
-          />
+          <Tabs.Tab value="regelspor" label="Regelspor" icon={<TasklistIcon aria-hidden />} />
+          <Tabs.Tab value="vedtak" label="Vedtak" icon={<GavelIcon aria-hidden />} />
           <Tabs.Tab
             value="intern-oppfolging"
             label="Intern oppfølging"
