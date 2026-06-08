@@ -15,7 +15,7 @@ importers:
         specifier: ^5.0.3
         version: 5.0.3(@types/node@25.9.0)(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       '@navikt/aksel-icons':
-        specifier: 8.10.1
+        specifier: ^8.10.1
         version: 8.10.1
       '@navikt/ds-css':
         specifier: ^8.10.1
