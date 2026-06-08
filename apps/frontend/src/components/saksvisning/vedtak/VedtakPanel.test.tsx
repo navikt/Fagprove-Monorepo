@@ -8,11 +8,18 @@ import {
 } from '../../../mocks/foreldrepenger-seed';
 import { VedtakPanel } from './VedtakPanel';
 
+function getVedtakPanel() {
+  const heading = screen.getByRole('heading', { name: 'Vedtak og beregning' });
+  const panel = heading.closest('section');
+  if (!panel) throw new Error('Fant ikke vedtak-panelet');
+  return panel;
+}
+
 describe('VedtakPanel', () => {
   it('renders innvilget vedtak with beregning and stønadsperiode', () => {
     render(<VedtakPanel sak={seedInnvilgetSakResponse} />);
 
-    const panel = screen.getByRole('heading', { name: 'Vedtak og beregning' }).closest('section')!;
+    const panel = getVedtakPanel();
     expect(within(panel).getByRole('row', { name: /Vedtaksvariant INNVILGET/ })).toBeInTheDocument();
     expect(within(panel).getByRole('row', { name: /Beregningsgrunnlag 648\s*000 kr/ })).toBeInTheDocument();
     expect(within(panel).getByRole('row', { name: /Stønadsperiode 49 uker/ })).toBeInTheDocument();
@@ -21,7 +28,7 @@ describe('VedtakPanel', () => {
   it('renders avslag with begrunnelse', () => {
     render(<VedtakPanel sak={seedAvslagSakResponse} />);
 
-    const panel = screen.getByRole('heading', { name: 'Vedtak og beregning' }).closest('section')!;
+    const panel = getVedtakPanel();
     expect(within(panel).getByRole('row', { name: /Vedtaksvariant AVSLAG/ })).toBeInTheDocument();
     expect(within(panel).getByText('Opptjeningskravet er ikke oppfylt og søker er ikke norsk borger')).toBeInTheDocument();
   });
@@ -29,7 +36,7 @@ describe('VedtakPanel', () => {
   it('renders engangsstønad with beløp', () => {
     render(<VedtakPanel sak={seedEngangsstonadSakResponse} />);
 
-    const panel = screen.getByRole('heading', { name: 'Vedtak og beregning' }).closest('section')!;
+    const panel = getVedtakPanel();
     expect(within(panel).getByRole('row', { name: /Vedtaksvariant ENGANGSSTONAD/ })).toBeInTheDocument();
     expect(within(panel).getByRole('row', { name: /Beregningsgrunnlag 92\s*648 kr/ })).toBeInTheDocument();
   });
@@ -37,7 +44,7 @@ describe('VedtakPanel', () => {
   it('shows pending state for manuell vurdering', () => {
     render(<VedtakPanel sak={seedManuellVurderingSakResponse} />);
 
-    const panel = screen.getByRole('heading', { name: 'Vedtak og beregning' }).closest('section')!;
+    const panel = getVedtakPanel();
     expect(within(panel).getByRole('row', { name: /Vedtaksvariant MANUELL_VURDERING/ })).toBeInTheDocument();
     expect(within(panel).getByText('Saken må behandles manuelt før endelig vedtak kan fattes.')).toBeInTheDocument();
     expect(within(panel).getByRole('row', { name: /Beregningsgrunnlag —/ })).toBeInTheDocument();
