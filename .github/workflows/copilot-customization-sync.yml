@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 jobs:
   sync:
-    uses: navikt/copilot/.github/workflows/copilot-customization-sync.yml@28d1537db0286b35127dc760cf7a80031dd38925 # main 2026-05-30
+    uses: navikt/copilot/.github/workflows/copilot-customization-sync.yml@7f41e92864c32099217b717672dadaab33f8890c # main 2026-05-30
     permissions:
       contents: write
       pull-requests: write
